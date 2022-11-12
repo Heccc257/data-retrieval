@@ -18,20 +18,35 @@ struct Request
     int SLA;
     int len_Driver;
     int *Driver;
-    Request() { }
+
+    Request() { Driver = nullptr; }
+
     // 不要析构
-    ~Request() { 
-        // if(Driver != nullptr)
-        //     delete []Driver;
+    ~Request() {
+        if(Driver != nullptr)
+            delete []Driver;
     }
-    Request& operator=(const Request& rhs) {
+    Request(const Request& rhs) {
+        if(this == &rhs) return ;
         RequestID = rhs.RequestID;
         RequestSize = rhs.RequestSize;
+        RequestType = rhs.RequestType;
         LogicalClock = rhs.LogicalClock;
         SLA = rhs.SLA;
         len_Driver = rhs.len_Driver;
         Driver = new int[len_Driver];
-        memcpy(rhs.Driver, Driver, sizeof(int) * len_Driver);
+        memcpy(Driver, rhs.Driver, sizeof(int) * len_Driver);
+    }
+    Request& operator=(const Request& rhs) {
+        if(this == &rhs) return *this;
+        RequestID = rhs.RequestID;
+        RequestSize = rhs.RequestSize;
+        RequestType = rhs.RequestType;
+        LogicalClock = rhs.LogicalClock;
+        SLA = rhs.SLA;
+        len_Driver = rhs.len_Driver;
+        Driver = new int[len_Driver];
+        memcpy(Driver, rhs.Driver, sizeof(int) * len_Driver);
         return *this;
     }
 };
@@ -55,7 +70,6 @@ struct valRequest {
         // request.Driver = new int[request.len_Driver];
         // memcpy(request.Driver, rq.Driver, sizeof(int) * request.len_Driver);
         request = rq;
-
         nowLogicalClock = _now;
         if(request.SLA < 0) {
             cout <<"id = " << request.RequestID <<" val = " << calc_val() << '\n';
@@ -107,8 +121,10 @@ struct Result
     int LogicalClock;
     int len_RequestList;
     int *RequestList;
-    Result() { }
-    ~Result() { if(RequestList != nullptr) delete RequestList; }
+    Result() {
+        RequestList = nullptr;
+    }
+    ~Result() { }
 };
 
 struct NestResult
@@ -130,8 +146,9 @@ public:
 
     void C_init(int driver_num)
     {
-        result = new Result[_driver_num];;
+        cerr << "num = " << driver_num << " Scheduler Init" << endl;
         _driver_num = driver_num;
+        result = new Result[_driver_num];
     }
 
     void get_need_schedule(int logical_clock, Request *request_list, int len_request) {
@@ -139,6 +156,16 @@ public:
 
         // for(int i=0; i<len_request; i++)
         //     need_schedule.push_back(valRequest(logical_clock, *(request_list+i)));
+
+        need_schedule.clear();
+        vector<Request>rq;
+        for(int i=0; i<len_request; i++)
+            rq.push_back( *(request_list+i) );
+        for(int i=0;i<len_request;i++)
+            rq.push_back(request_list[i]);
+        for(auto c : rq)
+            need_schedule.push_back(valRequest(logical_clock, c));
+        sort(need_schedule.begin(), need_schedule.end());
         // int totLen = need_schedule.size() + len_request;
         // Request* rq = new Request[totLen];
 
@@ -161,8 +188,8 @@ public:
         // }
 
         // for(auto c : need_schedule) {
-        //     cerr <<c.request.RequestID << ' ';
-        //     cerr <<c.val;
+        //     cerr <<c.request.RequestID;
+        //     cerr << " val = " <<c.val;
         //     cerr << " size=" << c.request.RequestSize << endl;
         // }
         // cerr << "above is need_schedule" << endl;
@@ -184,28 +211,24 @@ public:
 
     Result *C_schedule(int logical_clock, Request *request_list, int len_request, Driver *driver_list, int len_driver)
     {
-        // for(int i=0; i<len_request; i++)
-        //     rqID.insert(request_list[i].RequestID);
-
         cerr << "time: " << logical_clock << " schedule begin\n";
 
-        // if(result != nullptr) {
-        //     delete []result;
-        // }
-        // result = new Result[_driver_num];
         int *driver_volume = new int[_driver_num];
         int *driver_capacity = new int[_driver_num];
 
+        cerr << "begin get needsc\n";
         get_need_schedule(logical_clock, request_list, len_request);
 
         memset(driver_volume, 0, sizeof(int) * _driver_num);
+
+        cerr << "hh\n";
 
         for (int i = 0; i < _driver_num; i++)
         {
             result[i].DriverID = driver_list[i].DriverID;
             result[i].LogicalClock = logical_clock;
             result[i].len_RequestList = 0;
-
+            // cerr << "null = " << result[i].RequestList << " " << (void*)result[i].RequestList << '\n';
             if(result[i].RequestList != nullptr)
                 delete []result[i].RequestList;
             result[i].RequestList = new int[need_schedule.size()];
@@ -219,12 +242,14 @@ public:
         matchDriver.resize(need_schedule.size());
         finalMatchDriver.resize(need_schedule.size());
 
+        cerr << "begin solve\n";
+        
         double bestAns = -1e9;
-        for(int i=0; i<500; i++) {            
+        for(int i=0; i<500; i++) {       
             double nowans = solveGreedy(driver_volume, driver_capacity);
             // cerr << "solve over\n";
             if(nowans > bestAns) {
-                // cerr << "begin match\n";
+                cerr << "begin match\n";
                 bestAns = nowans;
                 
                 matchDriver2Result(result, matchDriver, need_schedule);
@@ -246,6 +271,7 @@ public:
         }
         cerr << "delete end\n";
 
+{
         // for(int i=0; i<_driver_num; i++) {
         //     for(int j=0; j<result[i].len_RequestList; j++) {
         //         // cout<<"res = " << result[i].RequestList[j]<<"\n";
@@ -263,8 +289,12 @@ public:
         //     }
         //     // cout<<"res : " << result[i].len_RequestList << '\n';
         // }
-
+}
+        
         cout <<(void*)(result) << " delete end\n";
+        delete []driver_volume;
+        delete []driver_capacity;
+
         return result;
     }
 
@@ -281,12 +311,15 @@ public:
             matchDriver[idx] = -1;
             if(rq.request.len_Driver == 0) continue ;
 
+
             if(1.0* (rand()%999997) / 999997 > deny) continue ;
 
             int bgDriver = rand()%rq.request.len_Driver;
+
             for(int i=0; i<rq.request.len_Driver; i++) {
                 int drID = rq.request.Driver[ (i + bgDriver) % rq.request.len_Driver ];
                 if(driver_volume[drID] + rq.request.RequestSize <= driver_capacity[drID]) {
+
                     credits += rq.val * rq.request.RequestSize;
                     driver_volume[drID] += rq.request.RequestSize;
                     matchDriver[idx] = drID;
