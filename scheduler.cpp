@@ -64,6 +64,7 @@ enum rqTYPE {
 struct valRequest {
     Request request;
     int nowLogicalClock;
+    int timeout;
     double val;
     valRequest() { }
     valRequest(int _now, const Request &rq) {
@@ -83,7 +84,7 @@ struct valRequest {
     }
     bool operator < (const valRequest& rq)const {
         if(fabs(val - rq.val) > 0.001) return val > rq.val;
-        return request.RequestSize > rq.request.RequestSize;
+        else return request.len_Driver < rq.request.len_Driver; 
     }
 
     double calc_val() {
@@ -91,11 +92,12 @@ struct valRequest {
         if(request.RequestSize == 0) return -1;
         // 若在当前时刻处理该请求,超时的时间数
         // 负数表示还未超时
-        int timeout = nowLogicalClock - (request.LogicalClock + request.SLA - 1);
+        timeout = nowLogicalClock - (request.LogicalClock + request.SLA - 1);
         if(request.RequestType == BE) {
             // 后台取回必须<12
-            if(timeout >= 0) return -1;
-            else return 0.5 * ceil(1.0*request.RequestSize / 50) / request.RequestSize;
+            if(timeout > 0) return -1;
+            else if(timeout >-6) return 0.5 * ceil(1.0*request.RequestSize / 50) / request.RequestSize;
+            else return 0.2 * ceil(1.0*request.RequestSize / 50) / request.RequestSize; // 还不太紧急
         }
 
         // 超时达到了12,直接丢弃
@@ -105,7 +107,7 @@ struct valRequest {
         if(timeout >= 0) {
             return coe * ceil(1.0*request.RequestSize / 50);
         } else {
-            return (0.3 / abs(timeout)) * coe * ceil(1.0*request.RequestSize / 50);
+            return (0.3 * (12-abs(timeout)) / 12) * coe * ceil(1.0*request.RequestSize / 50);
         }
     }
 };
@@ -141,9 +143,7 @@ public:
 
     set<int>rqID;
     CScheduler() {need_schedule.clear(); }
-    ~CScheduler() {
-        cerr << "Scheduler destructor\n";
-    }
+    ~CScheduler() { }
 
     void C_init(int driver_num)
     {
@@ -270,7 +270,18 @@ public:
             }
         }
 
-        
+        // for(int i=0; i<_driver_num; i++) {
+        //     cerr << "vol: " << driver_volume[i] << " cap: " << driver_capacity[i] << '\n';
+        // }
+        // for(int idx =0 ; idx < need_schedule.size(); idx ++ ) {
+        //     if(finalMatchDriver[idx] == -1) {
+        //         cerr << "id=" << need_schedule[idx].request.RequestID << " size = " << need_schedule[idx].request.RequestSize << " time: " << need_schedule[idx].timeout << " [" ;
+        //         for(int k=0; k < need_schedule[idx].request.len_Driver; k ++ )
+        //             cerr << need_schedule[idx].request.Driver[k] <<",";
+        //         cerr << "]\n";
+        //     }
+        // }
+
         // cout <<(void*)(result) << " delete end\n";
         delete []driver_volume;
         delete []driver_capacity;
@@ -334,7 +345,14 @@ public:
                 }
             }
         }
+        // for(int idx=0; idx < need_schedule.size(); idx++) {
+        //     valRequest &rq = need_schedule[idx];
+        //     if(matchDriver[idx] != -1) {
+        //         if(rq.request.RequestType == BE) credits += 
+        //     }
 
+        // }
+        
         return credits;
     }
 private:
