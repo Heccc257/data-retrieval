@@ -275,6 +275,7 @@ public:
         int epochs = 50;
         for(int i=0; i<epochs; i++) {       
             double nowans = solveGreedy(driver_volume, driver_capacity);
+            cerr << "max survive = " << *max_element(survive.begin(), survive.end());
             // cerr << "solve over\n";
             if(nowans > bestAns) {
                 // cerr << "begin match\n";
@@ -290,9 +291,6 @@ public:
  
         matchDriver2Result(result, finalMatchDriver, need_schedule);
         
-        // cerr << "loop over\n";
-        // cerr << "begin end\n";
-        // cerr << "schedulsize = " << need_schedule.size() << " " << finalMatchDriver.size() << '\n';
         // 删除已经处理的请求
         for(int idx=0; idx < need_schedule.size(); idx++) {
             if(finalMatchDriver[idx] != -1) {
