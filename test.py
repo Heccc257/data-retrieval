@@ -71,13 +71,13 @@ def get_score(driver_statues, request_table, schedule_result):
         delta_clock=singel_request['LogicalClock']-logical_clock+singel_request['SLA']
         request_size=singel_request['RequestSize']
         
-        if singel_request['RequestType']=='FE' and delta_clock<0 :
+        if singel_request['RequestType']=='FE' and delta_clock<=0 :
             # 前台取回超时罚分=min(12, 请求超时小时数)*?请求大小/50?
             return -min(12,-delta_clock)*np.ceil(request_size/50.0)
         elif singel_request['RequestType']=='BE' and delta_clock>=0:
             # 后台取回加分=0.5*?请求大小/50?
             return 0.5*np.ceil(request_size/50.0)
-        elif singel_request['RequestType']=='EM' and delta_clock<0:
+        elif singel_request['RequestType']=='EM' and delta_clock<=0:
             # 紧急取回超时罚分=2* min(12, 请求超时小时数)*?请求大小/50?
             return -2*min(12,-delta_clock)*np.ceil(request_size/50.0)
         else:
@@ -95,7 +95,7 @@ def get_score(driver_statues, request_table, schedule_result):
 
 
 if __name__ == '__main__':
-    os.system('g++ --shared scheduler.cpp -o scheduler.dll')
+    os.system('g++ --shared scheduler.cpp -o scheduler.dll -fPIC')
     driver_statues, request_list, driver_num=get_json_data(data_dir)
     request_table=sum([request for request in request_list.values()],[])
     driver_table=sum([driver for driver in driver_statues.values()],[])
