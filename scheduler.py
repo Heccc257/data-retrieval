@@ -74,6 +74,9 @@ class CScheduler(Scheduler):
         self.lib.C_schedule.argtypes = [c_void_p,c_int, POINTER(self.Request),c_int, POINTER(self.Driver),c_int]
         self.lib.C_schedule.restype = POINTER(self.Result)
 
+        self.lib.C_gc.argtypes=[c_void_p]
+        self.lib.C_gc.restype=c_void_p
+
         self.obj = self.lib.C_new()
 
     def init(self, driver_num: int):
@@ -90,7 +93,7 @@ class CScheduler(Scheduler):
             C_driver_statues.append(self.Driver(driver['DriverID'],driver['Capacity'],driver['LogicalClock']))
 
         C_schedule_result=self.lib.C_schedule(self.obj,logical_clock,(self.Request * len(C_request_list))(*C_request_list),len(C_request_list),(self.Driver * len(C_driver_statues))(*C_driver_statues),self.driver_num)
-        # import pdb;pdb.set_trace()
+        
         Results=[]
         for i in range(self.driver_num):
             RequestList=[]
@@ -98,3 +101,8 @@ class CScheduler(Scheduler):
                 RequestList.append(C_schedule_result[i].RequestList[j])
             Results.append({'DriverID':C_schedule_result[i].DriverID,'RequestList':RequestList,'LogicalClock':C_schedule_result[i].LogicalClock})
         return Results
+
+    def deconstruct(self):
+        print("decon")
+        self.lib.C_gc(self.obj)
+        print("decon ok")
