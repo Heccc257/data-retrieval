@@ -326,7 +326,7 @@ public:
                     break;
                 }
             }
-            if(deny > 0.3) deny *= 0.99;
+            if(deny > 0.4) deny *= 0.99;
         }
         return credits;
     }
