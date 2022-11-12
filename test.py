@@ -42,11 +42,16 @@ def simulate(driver_statues, request_list, driver_num,schedule_func):
     
     test_time=time.time()
     for logical_clock,(driver,request) in enumerate(zip(driver_statues.values(),request_list.values())):
+        print("test.py", "logclock", logical_clock, "begin")
         start_time=time.time()
         schedule_result.append(scheduler_test.schedule(logical_clock,request,driver))
         delta_time=time.time()-start_time
+
+        print("test.py", "logclock", logical_clock, "end schedule")
+
         assert delta_time<5, f"The time in scheduling logical_clock {logical_clock} is too long, please check your code."
     print(f"Total time is {time.time()-test_time}")
+    scheduler_test.deconstruct()
     return schedule_result
 
 
@@ -100,6 +105,12 @@ if __name__ == '__main__':
     request_table=sum([request for request in request_list.values()],[])
     driver_table=sum([driver for driver in driver_statues.values()],[])
     schedule_result=simulate(driver_statues, request_list, driver_num,CScheduler)
+    print("test.py", "end schedule")
+    print("test.py", "begin vali")
+    print(schedule_result)
     validate(driver_statues, request_table, schedule_result)
+
+    print("test.py", "begin score")
+    # import pdb;pdb.set_trace()
     score=get_score(driver_statues, request_table, schedule_result)
     print(f"Your score is {score}")
