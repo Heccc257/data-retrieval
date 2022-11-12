@@ -93,21 +93,28 @@ struct valRequest {
         // 若在当前时刻处理该请求,超时的时间数
         // 负数表示还未超时
         timeout = nowLogicalClock - (request.LogicalClock + request.SLA - 1);
+
+        // 超时达到了12,直接丢弃
+        if(timeout >= 12) return -1;
+
+        // EM立即处理
+        if(request.RequestType == EM) return 2.0; 
+
+        // 后台取回必须<12
         if(request.RequestType == BE) {
-            // 后台取回必须<12
             if(timeout > 0) return -1;
             else if(timeout >-6) return 0.5 * ceil(1.0*request.RequestSize / 50) / request.RequestSize;
             else return 0.2 * ceil(1.0*request.RequestSize / 50) / request.RequestSize; // 还不太紧急
         }
 
-        // 超时达到了12,直接丢弃
-        if(timeout >= 12) return -1;
-
-        double coe = (request.RequestType == FE) ? 1 : 2;
+        
+        // 前台
+        double coe = 1;
+        
         if(timeout >= 0) {
-            return coe * ceil(1.0*request.RequestSize / 50);
+            return coe * ceil(1.0*request.RequestSize / 50) / request.RequestSize;
         } else {
-            return (0.3 * (12-abs(timeout)) / 12) * coe * ceil(1.0*request.RequestSize / 50);
+            return (0.4 + 0.4 * (12-abs(timeout)) / 12) * coe * ceil(1.0*request.RequestSize / 50) / request.RequestSize;
         }
     }
 };
@@ -151,20 +158,26 @@ public:
         result = new Result[_driver_num];
     }
 
-    void get_need_schedule(int logical_clock, Request *request_list, int len_request) {
+    void get_need_schedule(int logical_clock, Request *request_list, int len_request, vector<valRequest>&need_schedule) {
         // need_schedule.clear();
 
         // for(int i=0; i<len_request; i++)
         //     need_schedule.push_back(valRequest(logical_clock, *(request_list+i)));
 
-        need_schedule.clear();
+            
         vector<Request>rq;
+        for(auto c : need_schedule) {
+            // cerr << "need_schedule : log = " << c.request.LogicalClock << '\n';
+            rq.push_back(c.request);
+        }
         for(int i=0; i<len_request; i++)
             rq.push_back( *(request_list+i) );
-        for(int i=0;i<len_request;i++)
-            rq.push_back(request_list[i]);
-        for(auto c : rq)
+
+        need_schedule.clear();
+        for(auto c : rq) {
+            // cerr << "rq: log = " << c.LogicalClock << '\n';
             need_schedule.push_back(valRequest(logical_clock, c));
+        }
         sort(need_schedule.begin(), need_schedule.end());
         // int totLen = need_schedule.size() + len_request;
         // Request* rq = new Request[totLen];
@@ -216,7 +229,7 @@ public:
         int *driver_volume = new int[_driver_num];
         int *driver_capacity = new int[_driver_num];
 
-        get_need_schedule(logical_clock, request_list, len_request);
+        get_need_schedule(logical_clock, request_list, len_request, need_schedule);
 
         memset(driver_volume, 0, sizeof(int) * _driver_num);
 
@@ -237,13 +250,30 @@ public:
 
         vector<int>().swap(matchDriver);
         vector<int>().swap(finalMatchDriver);
+        vector<int>().swap(survive);
         matchDriver.resize(need_schedule.size());
         finalMatchDriver.resize(need_schedule.size());
+        survive.resize(need_schedule.size());
 
         // cerr << "begin solve\n";
-        
+
+        // puts("-----------------------------------");
+        // for(int i=0; i<_driver_num; i++) {
+        //     cerr << "vol: " << driver_volume[i] << " cap: " << driver_capacity[i] << '\n';
+        // }
+        // for(int idx =0 ; idx < need_schedule.size(); idx ++ ) {
+        //     if(1) {
+        //         cerr << "id=" << need_schedule[idx].request.RequestID << " val = " << need_schedule[idx].val << " Type = " << need_schedule[idx].request.RequestType << " size = " << need_schedule[idx].request.RequestSize << " logi = " << need_schedule[idx].request.LogicalClock << " time: " << need_schedule[idx].timeout << " [" ;
+        //         for(int k=0; k < need_schedule[idx].request.len_Driver; k ++ )
+        //             cerr << need_schedule[idx].request.Driver[k] <<",";
+        //         cerr << "]\n";
+        //     }
+        // }
+        // puts("-----------------------------------");    
+
         double bestAns = -1e9;
-        for(int i=0; i<500; i++) {       
+        int epochs = 50;
+        for(int i=0; i<epochs; i++) {       
             double nowans = solveGreedy(driver_volume, driver_capacity);
             // cerr << "solve over\n";
             if(nowans > bestAns) {
@@ -251,17 +281,16 @@ public:
                 bestAns = nowans;
                 
                 // cerr << "match over\n";
-
-                for(int j=0; j<matchDriver.size(); j++)
+                for(int j=0; j<matchDriver.size(); j++) {
                     finalMatchDriver[j] = matchDriver[j];
+                    if(finalMatchDriver[j] != -1) survive[j]++;
+                }
+                // cerr << "max survive = " << *max_element(survive.begin(), survive.end()) << endl;
             }
         }
  
         matchDriver2Result(result, finalMatchDriver, need_schedule);
         
-        // cerr << "loop over\n";
-        // cerr << "begin end\n";
-        // cerr << "schedulsize = " << need_schedule.size() << " " << finalMatchDriver.size() << '\n';
         // 删除已经处理的请求
         for(int idx=0; idx < need_schedule.size(); idx++) {
             if(finalMatchDriver[idx] != -1) {
@@ -270,17 +299,19 @@ public:
             }
         }
 
+        // puts("-----------------------------------");
         // for(int i=0; i<_driver_num; i++) {
         //     cerr << "vol: " << driver_volume[i] << " cap: " << driver_capacity[i] << '\n';
         // }
         // for(int idx =0 ; idx < need_schedule.size(); idx ++ ) {
         //     if(finalMatchDriver[idx] == -1) {
-        //         cerr << "id=" << need_schedule[idx].request.RequestID << " size = " << need_schedule[idx].request.RequestSize << " time: " << need_schedule[idx].timeout << " [" ;
+        //         cerr << "id=" << need_schedule[idx].request.RequestID << " val = " << need_schedule[idx].val << " Type = " << need_schedule[idx].request.RequestType << " size = " << need_schedule[idx].request.RequestSize << " logi = " << need_schedule[idx].request.LogicalClock << " time: " << need_schedule[idx].timeout << " [" ;
         //         for(int k=0; k < need_schedule[idx].request.len_Driver; k ++ )
         //             cerr << need_schedule[idx].request.Driver[k] <<",";
         //         cerr << "]\n";
         //     }
         // }
+        // puts("-----------------------------------");
 
         // cout <<(void*)(result) << " delete end\n";
         delete []driver_volume;
@@ -307,13 +338,18 @@ public:
         double credits = 0;
         double deny = 1;
         // cout << "preproc\n";  
-        for(int idx=0; idx < need_schedule.size(); idx++) {
+
+        
+        // 初始化
+        for(int idx=0; idx < need_schedule.size(); idx++)
             matchDriver[idx] = -1;
+
+        for(int idx=0; idx < need_schedule.size(); idx++) {
             valRequest &rq = need_schedule[idx];
             if(rq.request.len_Driver == 0) continue ;
 
-
-            if(1.0* (randGen(base, p)%mod) / mod > deny) continue ;
+            // 随机踢出
+            if(1.0* (randGen(base, p)%mod) / mod - survive[idx]/20.0 > deny) continue ;
 
             int bgDriver = randGen(base, p);
 
@@ -327,11 +363,11 @@ public:
                     break;
                 }
             }
-            if(deny > 0.7) deny *= 0.99;
+            if(deny > 0.8) deny *= 0.99;
         }
 
         for(int idx=0; idx < need_schedule.size(); idx++) {
-            if(matchDriver[idx] !=- 1) continue;
+            if(matchDriver[idx] !=- 1) continue ;
             valRequest &rq = need_schedule[idx];
             if(rq.request.len_Driver == 0) continue ;
 
@@ -345,21 +381,19 @@ public:
                 }
             }
         }
-        // for(int idx=0; idx < need_schedule.size(); idx++) {
-        //     valRequest &rq = need_schedule[idx];
-        //     if(matchDriver[idx] != -1) {
-        //         if(rq.request.RequestType == BE) credits += 
-        //     }
-
-        // }
         
         return credits;
     }
 private:
     int _driver_num;
     vector<valRequest>need_schedule;
+    // 两个matchDriver的下标都是与need_schedule对应,注意不是requestID
     vector<int>matchDriver; // -1表示不处理
-    vector<int>finalMatchDriver; 
+    vector<int>finalMatchDriver;
+
+    // 表示某个询问在更优方案中被处理的次数,处理得越多越不容易被踢出
+    // survive的下标都是与need_schedule对应,注意不是requestID
+    vector<int>survive;
     Result* result;
 
     void My_algo(int logical_clock, Request *request_list, int len_request, Driver *driver_list, int len_driver, Result *result, int *driver_volume, int *driver_capacity)
