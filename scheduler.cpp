@@ -275,7 +275,6 @@ public:
         int epochs = 50;
         for(int i=0; i<epochs; i++) {       
             double nowans = solveGreedy(driver_volume, driver_capacity);
-            cerr << "max survive = " << *max_element(survive.begin(), survive.end());
             // cerr << "solve over\n";
             if(nowans > bestAns) {
                 // cerr << "begin match\n";
@@ -286,6 +285,7 @@ public:
                     finalMatchDriver[j] = matchDriver[j];
                     if(finalMatchDriver[j] != -1) survive[j]++;
                 }
+                // cerr << "max survive = " << *max_element(survive.begin(), survive.end()) << endl;
             }
         }
  
