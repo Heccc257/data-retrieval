@@ -252,13 +252,26 @@ public:
                 cerr << "begin match\n";
                 bestAns = nowans;
                 
-                matchDriver2Result(result, matchDriver, need_schedule);
                 // cerr << "match over\n";
 
                 for(int j=0; j<matchDriver.size(); j++)
                     finalMatchDriver[j] = matchDriver[j];
             }
         }
+        for(int i=0; i<need_schedule.size(); i++) {
+            auto& rq = need_schedule[i];
+            if(finalMatchDriver[i] == -1) {
+                for(int j=0; j<rq.request.len_Driver; j++) {
+                    int drID = rq.request.Driver[j];
+                    if(driver_volume[drID] + rq.request.RequestSize <= driver_capacity[drID]) {
+                        driver_volume[drID] += rq.request.RequestSize;
+                        finalMatchDriver[i] = drID;
+                    }
+                }
+            }
+        }
+        matchDriver2Result(result, finalMatchDriver, need_schedule);
+        
         cerr << "loop over\n";
         cerr << "begin end\n";
         cerr << "schedulsize = " << need_schedule.size() << " " << finalMatchDriver.size() << '\n';
