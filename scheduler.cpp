@@ -156,6 +156,7 @@ public:
     {
         _driver_num = driver_num;
         result = new Result[_driver_num];
+        procNum.resize(_driver_num);
     }
 
     void get_need_schedule(int logical_clock, Request *request_list, int len_request, vector<valRequest>&need_schedule) {
@@ -240,9 +241,8 @@ public:
             result[i].LogicalClock = logical_clock;
             result[i].len_RequestList = 0;
             // cerr << "null = " << result[i].RequestList << " " << (void*)result[i].RequestList << '\n';
-            if(result[i].RequestList != nullptr)
-                delete []result[i].RequestList;
-            result[i].RequestList = new int[need_schedule.size()];
+
+
             driver_capacity[i] = driver_list[i].Capacity;
         }
 
@@ -271,6 +271,7 @@ public:
         // }
         // puts("-----------------------------------");    
 
+        // solve 贪心算法
         double bestAns = -1e9;
         int epochs = 50;
         for(int i=0; i<epochs; i++) {       
@@ -289,6 +290,18 @@ public:
             }
         }
  
+        // 分配内存
+        
+        for(int i=0; i<_driver_num; i++) procNum[i] = 0;
+        for(auto dr : finalMatchDriver)
+            if(dr != -1) procNum[dr]++;
+        
+        for(int i=0; i<_driver_num; i++) {
+            if(result[i].RequestList != nullptr)
+                delete []result[i].RequestList;
+            if(procNum[i]) result[i].RequestList = new int[procNum[i]];
+            else result[i].RequestList = nullptr;
+        }
         matchDriver2Result(result, finalMatchDriver, need_schedule);
         
         // 删除已经处理的请求
@@ -390,7 +403,9 @@ private:
     // 两个matchDriver的下标都是与need_schedule对应,注意不是requestID
     vector<int>matchDriver; // -1表示不处理
     vector<int>finalMatchDriver;
-
+    
+    // 每个dr需要处理的数量
+    vector<int>procNum;
     // 表示某个询问在更优方案中被处理的次数,处理得越多越不容易被踢出
     // survive的下标都是与need_schedule对应,注意不是requestID
     vector<int>survive;
