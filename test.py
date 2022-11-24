@@ -102,7 +102,7 @@ def get_score(driver_statues, request_table, schedule_result):
 
 
 if __name__ == '__main__':
-    os.system('g++ --shared scheduler.cpp -o myscheduler.so -fPIC')
+    os.system('make')
     driver_statues, request_list, driver_num=get_json_data(data_dir)
     request_table=sum([request for request in request_list.values()],[])
     driver_table=sum([driver for driver in driver_statues.values()],[])
