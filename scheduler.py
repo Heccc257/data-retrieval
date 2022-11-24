@@ -1,6 +1,7 @@
 import time
 from abc import ABCMeta, abstractmethod
 import numpy as np
+import json
 from ctypes import *
 
 
@@ -38,7 +39,8 @@ class DemoScheduler(Scheduler):
                 break
         return schedule_result
     
-class CScheduler(Scheduler):
+class FinalScheduler(Scheduler):
+    
     class Request(Structure):
         _fields_ = [("RequestID", c_int),
                     ("RequestType", c_int),# FE:0, BE:1, EM:2
@@ -63,7 +65,7 @@ class CScheduler(Scheduler):
 
         
     def __init__(self):
-        self.lib = cdll.LoadLibrary('./scheduler.dll')
+        self.lib = cdll.LoadLibrary('./myscheduler.so')
         
         self.lib.C_new.argtypes = []
         self.lib.C_new.restype = c_void_p
@@ -85,6 +87,10 @@ class CScheduler(Scheduler):
         return
 
     def schedule(self, logical_clock: int, request_list: list, driver_statues: list) -> list:
+        request_list=[json.loads(request) for request in request_list]
+        driver_statues=[json.loads(driver) for driver in driver_statues]
+        
+        # import pdb;pdb.set_trace()
         C_request_list=[]
         C_driver_statues=[]
         for request in request_list:
@@ -99,7 +105,7 @@ class CScheduler(Scheduler):
             RequestList=[]
             for j in range(C_schedule_result[i].len_RequestList):
                 RequestList.append(C_schedule_result[i].RequestList[j])
-            Results.append({'DriverID':C_schedule_result[i].DriverID,'RequestList':RequestList,'LogicalClock':C_schedule_result[i].LogicalClock})
+            Results.append(json.dumps({"DriverID":C_schedule_result[i].DriverID,"RequestList":RequestList,"LogicalClock":C_schedule_result[i].LogicalClock}))
         return Results
 
     def deconstruct(self):

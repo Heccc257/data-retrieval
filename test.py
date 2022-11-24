@@ -44,7 +44,9 @@ def simulate(driver_statues, request_list, driver_num,schedule_func):
     for logical_clock,(driver,request) in enumerate(zip(driver_statues.values(),request_list.values())):
         # print("test.py", "logclock", logical_clock, "begin")
         start_time=time.time()
-        schedule_result.append(scheduler_test.schedule(logical_clock,request,driver))
+        result=scheduler_test.schedule(logical_clock,[json.dumps(single_request) for single_request in request],[json.dumps(single_driver) for single_driver in driver])
+        # import pdb; pdb.set_trace()
+        schedule_result.append([json.loads(single_result) for single_result in result])
         delta_time=time.time()-start_time
 
         # print("test.py", "logclock", logical_clock, "end schedule")
@@ -100,17 +102,13 @@ def get_score(driver_statues, request_table, schedule_result):
 
 
 if __name__ == '__main__':
-    os.system('g++ --shared scheduler.cpp -o scheduler.dll -fPIC')
+    os.system('g++ --shared scheduler.cpp -o myscheduler.so -fPIC')
     driver_statues, request_list, driver_num=get_json_data(data_dir)
     request_table=sum([request for request in request_list.values()],[])
     driver_table=sum([driver for driver in driver_statues.values()],[])
-    schedule_result=simulate(driver_statues, request_list, driver_num,CScheduler)
-    # print("test.py", "end schedule")
-    # print("test.py", "begin vali")
-    # print(schedule_result)
+    schedule_result=simulate(driver_statues, request_list, driver_num,FinalScheduler)
+
     validate(driver_statues, request_table, schedule_result)
 
-    # print("test.py", "begin score")
-    # import pdb;pdb.set_trace()
     score=get_score(driver_statues, request_table, schedule_result)
     print(f"Your score is {score}")
