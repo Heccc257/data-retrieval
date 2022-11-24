@@ -17,28 +17,28 @@ class Scheduler(metaclass=ABCMeta):
         pass
 
 
-class DemoScheduler(Scheduler):
-    def __init__(self):
-        pass
+# class DemoScheduler(Scheduler):
+#     def __init__(self):
+#         pass
 
-    def init(self, driver_num: int):
-        self.driver_num = driver_num
-        return
+#     def init(self, driver_num: int):
+#         self.driver_num = driver_num
+#         return
 
-    def schedule(self, logical_clock: int, request_list: list, driver_statues: list) -> list:
-        driver_capacity=np.array([driver_statues[i]['Capacity'] for i in range(self.driver_num)])
-        driver_volume=np.zeros(self.driver_num)
-        schedule_result=[{'DriverID':i,'RequestList':[],'LogicalClock':logical_clock} for i in range(self.driver_num)]
+#     def schedule(self, logical_clock: int, request_list: list, driver_statues: list) -> list:
+#         driver_capacity=np.array([driver_statues[i]['Capacity'] for i in range(self.driver_num)])
+#         driver_volume=np.zeros(self.driver_num)
+#         schedule_result=[{'DriverID':i,'RequestList':[],'LogicalClock':logical_clock} for i in range(self.driver_num)]
         
-        for request in request_list:
-            for device in request['Driver']:
-                if driver_volume[device]+request['RequestSize']<=driver_capacity[device]:
-                    driver_volume[device]+=request['RequestSize']
-                    schedule_result[device]['RequestList'].append(request['RequestID'])
-                break
-        return schedule_result
+#         for request in request_list:
+#             for device in request['Driver']:
+#                 if driver_volume[device]+request['RequestSize']<=driver_capacity[device]:
+#                     driver_volume[device]+=request['RequestSize']
+#                     schedule_result[device]['RequestList'].append(request['RequestID'])
+#                 break
+#         return schedule_result
     
-class CScheduler(Scheduler):
+class FinalScheduler(Scheduler):
     class Request(Structure):
         _fields_ = [("RequestID", c_int),
                     ("RequestType", c_int),# FE:0, BE:1, EM:2
@@ -63,6 +63,8 @@ class CScheduler(Scheduler):
 
         
     def __init__(self):
+        import os
+        os.system('g++ --shared scheduler.cpp -o scheduler.dll -fPIC')
         self.lib = cdll.LoadLibrary('./scheduler.dll')
         
         self.lib.C_new.argtypes = []

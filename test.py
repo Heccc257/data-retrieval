@@ -29,7 +29,7 @@ def get_json_data(file_path):
                 status_table['request_list'].append(json_line)
 
     driver_statues_table=pd.DataFrame(status_table['driver_statues']).groupby('LogicalClock').apply(lambda x:x.to_dict(orient='records')).to_dict()
-    driver_num=len(driver_statues_table[0])
+    driver_num=max([len(driver_statues) for driver_statues in driver_statues_table.values()])
     request_list_table=pd.DataFrame(status_table['request_list']).groupby('LogicalClock').apply(lambda x:x.to_dict(orient='records')).to_dict()
     return driver_statues_table,request_list_table,driver_num
 
@@ -51,7 +51,7 @@ def simulate(driver_statues, request_list, driver_num,schedule_func):
 
         assert delta_time<5, f"The time in scheduling logical_clock {logical_clock} is too long, please check your code."
     print(f"Total time is {time.time()-test_time}")
-    scheduler_test.deconstruct()
+    # scheduler_test.deconstruct()
     return schedule_result
 
 
@@ -100,11 +100,11 @@ def get_score(driver_statues, request_table, schedule_result):
 
 
 if __name__ == '__main__':
-    os.system('g++ --shared scheduler.cpp -o scheduler.dll -fPIC')
+    # os.system('g++ --shared scheduler.cpp -o scheduler.dll -fPIC')
     driver_statues, request_list, driver_num=get_json_data(data_dir)
     request_table=sum([request for request in request_list.values()],[])
     driver_table=sum([driver for driver in driver_statues.values()],[])
-    schedule_result=simulate(driver_statues, request_list, driver_num,CScheduler)
+    schedule_result=simulate(driver_statues, request_list, driver_num,FinalScheduler)
     # print("test.py", "end schedule")
     # print("test.py", "begin vali")
     # print(schedule_result)
