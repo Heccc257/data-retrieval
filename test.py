@@ -52,7 +52,7 @@ def simulate(driver_statues, request_list, driver_num,schedule_func):
 
         assert delta_time<5, f"The time in scheduling logical_clock {logical_clock} is too long, please check your code."
     print(f"Total time is {time.time()-test_time}")
-    scheduler_test.deconstruct()
+    # scheduler_test.deconstruct()
     return schedule_result
 
 

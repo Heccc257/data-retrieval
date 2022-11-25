@@ -206,35 +206,9 @@ public:
             need_schedule.push_back(valRequest(logical_clock, c));
         }
         sort(need_schedule.begin(), need_schedule.end());
-        // int totLen = need_schedule.size() + len_request;
-        // Request* rq = new Request[totLen];
-
-        // for(int i=0; i<len_request; i++)
-        //     rq[i] = *(request_list+i);
-        // for(int idx=0; idx<need_schedule.size(); idx++)
-        //     rq[idx + len_request] = need_schedule[idx].request;
-
-        // vector<valRequest>().swap(need_schedule);
-        // need_schedule.resize(len_request);
-
-        // for(int i=0; i<totLen; i++) {
-        //     need_schedule[i] = valRequest(logical_clock, rq[i]);
-        //     // need_schedule.push_back(valRequest(logical_clock, r));
-        // }
-        // sort(need_schedule.begin(), need_schedule.end());
-
-        // while(need_schedule.size() && need_schedule.back().val < 0) {
-        //     need_schedule.pop_back();
-        // }
-
-        // for(auto c : need_schedule) {
-        //     cerr <<c.request.RequestID;
-        //     cerr << " val = " <<c.val;
-        //     cerr << " size=" << c.request.RequestSize << endl;
-        // }
-        // cerr << "above is need_schedule" << endl;
-        // // 释放内存
-        // delete []rq;
+        while (need_schedule.size() && need_schedule.back().val < 0)
+            need_schedule.pop_back();
+        rq.clear();
     }
 
     void matchDriver2Result(Result *result, vector<int> &matchDriver, vector<valRequest> &need_schedule)
@@ -425,6 +399,9 @@ public:
         // cout <<(void*)(result) << " delete end\n";
         delete[] driver_volume;
         delete[] driver_capacity;
+
+        // delete[] request_list;
+        // delete[] driver_list;
 
         return result;
     }

@@ -27,6 +27,8 @@ class DemoScheduler(Scheduler):
         return
 
     def schedule(self, logical_clock: int, request_list: list, driver_statues: list) -> list:
+        request_list=[json.loads(request) for request in request_list]
+        driver_statues=[json.loads(driver) for driver in driver_statues]
         driver_capacity=np.array([driver_statues[i]['Capacity'] for i in range(self.driver_num)])
         driver_volume=np.zeros(self.driver_num)
         schedule_result=[{'DriverID':i,'RequestList':[],'LogicalClock':logical_clock} for i in range(self.driver_num)]
@@ -37,6 +39,7 @@ class DemoScheduler(Scheduler):
                     driver_volume[device]+=request['RequestSize']
                     schedule_result[device]['RequestList'].append(request['RequestID'])
                 break
+        schedule_result=[json.dumps(result) for result in schedule_result]
         return schedule_result
     
 class FinalScheduler(Scheduler):
