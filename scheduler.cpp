@@ -321,7 +321,7 @@ public:
         }
 
         clock_t max_time;
-        for (int times = 100, n = need_schedule.size(); times--;)
+        for (int times = 32, n = need_schedule.size(); times--;)
         {
             // clock_t start, finish;
             // double totaltime;

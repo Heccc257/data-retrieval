@@ -6,7 +6,8 @@ parser.add_option('--num_drivers',type="int",default=4) # （最大）磁带驱�
 parser.add_option('--max_requests',type="int",default=100) # 最大请求数量
 parser.add_option('--max_bandwidth',type="int",default=50) # 每个磁带驱动器最大负载（x100)
 parser.add_option('--rqs2dr_bwratio',type="float",default=1.5) # 每小时请求总数据量与总负载量之比（由于每个请求都必须可以被磁带驱动器满足，实际比值要小于此值）
-parser.add_option('--output_file',type="string",default="/root/data-retrieval/data/dataset") # 输出文件夹
+parser.add_option('--output_file',type="string",default="/root/data-retrieval/data") # 输出文件夹
+parser.add_option('--schedule_time',type="int",default=200)
 (options, args) = parser.parse_args()
 
 def trunc_nomal(loc,scale,trunc_l=-1,trunc_h=-1):
@@ -49,6 +50,9 @@ def generate_data(file,num_dr,num_t,max_rqs,max_bw,bw_ratio):
             bandwith=bandwith-bandwith/10*abs(np.random.standard_normal())
             file.write(str_rqs(sum_rqs+id_rqs,np.random.randint(5),dr_list,int(bandwith),clk))
         sum_rqs=sum_rqs+num_rqs
+            
+        if(clk%50==0):
+            print("schedule time: ",clk)
     
     # Generate drivers data
     bw_dr=[]
@@ -60,16 +64,18 @@ def generate_data(file,num_dr,num_t,max_rqs,max_bw,bw_ratio):
     num_rqs=int(trunc_nomal(max_rqs/2,max_rqs/6,1,max_rqs))
 
 
+
 # num_dr=np.random.randint(1,1000)
 # num_t=np.random.randint(10,300)
 # max_rqs=np.random.randint(10,3000)
 # max_bw=np.random.randint(1,1e3)
 num_dr=options.num_drivers
-num_t=np.random.randint(10,1000)
+# num_t=np.random.randint(10,1000)
+num_t=options.schedule_time
 max_rqs=options.max_requests
 max_bw=options.max_bandwidth
 bw_ratio=options.rqs2dr_bwratio
 opath=options.output_file
-f=open(opath+"/data_dr"+str(num_dr)+"_h"+str(num_t)+"_rqs"+str(max_rqs)+"_bw"+str(max_bw)+"_bwratio"+str(bw_ratio)+".log","w",encoding='UTF-8')
+f=open(opath+"/data_dr"+str(num_dr)+"_h"+str(num_t)+"_rqs"+str(max_rqs)+"_bw"+str(max_bw)+"_bwratio"+str(bw_ratio)+".log","w+",encoding='UTF-8')
 generate_data(f,num_dr,num_t,max_rqs,max_bw,bw_ratio)
 f.close()
