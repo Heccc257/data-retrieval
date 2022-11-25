@@ -6,12 +6,11 @@ import numpy  as np
 from scheduler import *
 import time
 import argparse
-data_dir='data/Demo.log'
 
-# parser = argparse.ArgumentParser()
-# parser.add_argument('--schedule_func', type=str, default='CScheduler', help='The name of the schedule function')
-# parser.add_argument('--data_dir', type=str, default='data/Demo.log', help='The path of the data')
-# cfg=parser.parse_args()
+parser = argparse.ArgumentParser()
+parser.add_argument('--schedule_func', type=str, default='CScheduler', help='The name of the schedule function')
+parser.add_argument('--data_dir', type=str, default='data/Demo.log', help='The path of the data')
+cfg=parser.parse_args()
 
 
 
@@ -53,7 +52,7 @@ def simulate(driver_statues, request_list, driver_num,schedule_func):
 
         assert delta_time<5, f"The time in scheduling logical_clock {logical_clock} is too long, please check your code."
     print(f"Total time is {time.time()-test_time}")
-    scheduler_test.deconstruct()
+    # scheduler_test.deconstruct()
     return schedule_result
 
 
@@ -102,13 +101,16 @@ def get_score(driver_statues, request_table, schedule_result):
 
 
 if __name__ == '__main__':
-    os.system('g++ --shared scheduler.cpp -o myscheduler.so -fPIC')
+    os.system('make')
+    data_dir=cfg.data_dir
+    print("get data")
     driver_statues, request_list, driver_num=get_json_data(data_dir)
     request_table=sum([request for request in request_list.values()],[])
     driver_table=sum([driver for driver in driver_statues.values()],[])
+    print("simulating")
     schedule_result=simulate(driver_statues, request_list, driver_num,FinalScheduler)
-
+    print("validating")
     validate(driver_statues, request_table, schedule_result)
-
+    print("scoring")
     score=get_score(driver_statues, request_table, schedule_result)
     print(f"Your score is {score}")
