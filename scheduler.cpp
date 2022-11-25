@@ -91,7 +91,7 @@ struct valRequest
     ~valRequest()
     {
         // if(request.Driver != nullptr)
-        //     delete request.Driver;
+            // delete request.Driver;
     }
     bool operator<(const valRequest &rq) const
     {
@@ -320,38 +320,64 @@ public:
             }
         }
 
-        clock_t max_time;
+        double credits = 0;
+
+        for (int i = 0; i < _driver_num; i++)
+            driver_volume[i] = 0;
+
+
+        for (int j = 0; j < need_schedule.size(); j++) {
+            matchDriver[j] = finalMatchDriver[j];
+            if (matchDriver[j] != -1) {
+                valRequest &rq = need_schedule[j];
+                driver_volume[matchDriver[j]] += rq.request.RequestSize;
+                // credits += rq.val * rq.request.RequestSize;
+            }
+        }
+
+        double middleans = bestAns;
+        std::vector<int> middleMatchDriver = finalMatchDriver;
+
         for (int times = 32, n = need_schedule.size(); times--;)
         {
-            // clock_t start, finish;
-            // double totaltime;
-            // start = clock();
-            // int cnt = 0;
             std::random_device rd;
             srand(rd());
-            std::vector<int> p(n);
-            std::random_shuffle(p.begin(), p.end());
             double temp = 1;
             double velo = 0.997;
             double momentum = 0.99;
             while (temp > 1e-14)
             {
-                double nowans = disturb(driver_volume, driver_capacity, temp, p);
+                int pos = rand() % n;
+                // int pos = gendisturb(temp);
+                if (pos == -1) continue;
+                double nowans = change(pos, bestAns, driver_volume, driver_capacity);
+                // double nowans = disturb(driver_volume, driver_capacity, temp, p);
                 double delta = bestAns - nowans;
                 if (delta < 0 || exp(-delta / temp) * RAND_MAX > rand())
                 {
-                    for (int j = 0; j < n; j++)
-                        finalMatchDriver[j] = matchDriver[j];
+                    bestAns = nowans;
+                    finalMatchDriver[pos] = matchDriver[pos];
+                }else {
+                    recover(pos, driver_volume, driver_capacity);
                 }
                 // temp *= 0.997;
                 temp *= velo;
-                if (velo > 0.8)
-                    velo *= momentum;
+                // if (velo > 0.8)
+                    // velo *= momentum;
                 // cnt++;
+            }
+            if (bestAns > middleans) {
+                vector<int>().swap(middleMatchDriver);
+                middleans = bestAns;
+                middleMatchDriver = finalMatchDriver;
             }
             // std::cerr << (clock() - start) / (double)CLOCKS_PER_SEC << '\n';
             // std::cerr << cnt << "\n";
         }
+
+        finalMatchDriver = middleMatchDriver;
+
+        std::vector<int>().swap(middleMatchDriver);
 
         // 分配内存
 
@@ -478,6 +504,45 @@ public:
         return credits;
     }
 
+    int gendisturb(double temp) {
+        int n = need_schedule.size();
+        int modifiy = std::max(temp * n * rand() / RAND_MAX, (double)n / 2);
+        int start = n - modifiy;
+        if (start == n) return -1;
+        return start + rand() % modifiy;
+    }
+
+    double change(int pos, double credits, int *driver_volume, int *driver_capacity) {
+        valRequest &rq = need_schedule[pos];
+        if (matchDriver[pos] == -1) {
+            for (int i = 0; i < rq.request.len_Driver; i++) {
+                int drID = rq.request.Driver[i];
+                if (driver_volume[drID] + rq.request.RequestSize <= driver_capacity[drID]) {
+                    credits += rq.val * rq.request.RequestSize;
+                    driver_volume[drID] += rq.request.RequestSize;
+                    matchDriver[pos] = drID;
+                    break;
+                }
+            }
+        }else {
+            credits -= rq.val * rq.request.RequestSize;
+            driver_volume[matchDriver[pos]] -= rq.request.RequestSize;
+            matchDriver[pos] = -1;
+        }
+        return credits;
+    }
+
+    void recover(int pos, int *driver_volume, int *driver_capacity) {
+        valRequest &rq = need_schedule[pos];
+        if (matchDriver[pos] == -1) {
+            matchDriver[pos] = finalMatchDriver[pos];
+            driver_volume[matchDriver[pos]] += rq.request.RequestSize;
+        }else {
+            driver_volume[matchDriver[pos]] -= rq.request.RequestSize;
+            matchDriver[pos] = -1;
+        }
+    }
+
     double disturb(int *driver_volume, int *driver_capacity, double temp, const std::vector<int> &p)
     {
         int n = need_schedule.size();
@@ -485,9 +550,6 @@ public:
         int start = n - modifiy;
 
         double credits = 0;
-
-        for (int i = 0; i < _driver_num; i++)
-            driver_volume[i] = 0;
 
         for (int i = 0; i < n; i++)
             matchDriver[i] = -1;
