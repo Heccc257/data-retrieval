@@ -228,7 +228,7 @@ public:
     Result *C_schedule(int logical_clock, Request *request_list, int len_request, Driver *driver_list, int len_driver)
     {
         cerr << "time: " << logical_clock << " schedule begin\n";
-
+        
         int *driver_volume = new int[_driver_num];
         int *driver_capacity = new int[_driver_num];
 
