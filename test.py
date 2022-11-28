@@ -17,6 +17,7 @@ cfg=parser.parse_args()
 def get_json_data(file_path):
     pattern=re.compile(r'(.*)(\{.*\})',re.S)
     status_table={'driver_statues':[],'request_list':[]}
+    
     with open(file_path, 'r') as f:
         for line in f.readlines():
             regx=pattern.search(line)
@@ -28,7 +29,9 @@ def get_json_data(file_path):
                 status_table['request_list'].append(json_line)
 
     driver_statues_table=pd.DataFrame(status_table['driver_statues']).groupby('LogicalClock').apply(lambda x:x.to_dict(orient='records')).to_dict()
-    driver_num=max([len(table) for table in driver_statues_table.values()])
+    # driver_num=max([len(table) for table in driver_statues_table.values()])
+    driver_num=max([max([driver['DriverID'] for driver in table]) for table in driver_statues_table.values()])+1
+    print(driver_num)
     request_list_table=pd.DataFrame(status_table['request_list']).groupby('LogicalClock').apply(lambda x:x.to_dict(orient='records')).to_dict()
     return driver_statues_table,request_list_table,driver_num
 
