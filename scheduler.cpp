@@ -228,25 +228,32 @@ public:
     Result *C_schedule(int logical_clock, Request *request_list, int len_request, Driver *driver_list, int len_driver)
     {
         cerr << "time: " << logical_clock << " schedule begin\n";
-        
+        // cerr << "len = " << len_driver << ' ' << _driver_num << '\n';
+        // for (int i=0; i<len_driver; i++) {
+        //     cerr << driver_list[i].DriverID << " " << driver_list[i].Capacity << '\n';
+        // }
+
         int *driver_volume = new int[_driver_num];
         int *driver_capacity = new int[_driver_num];
 
         get_need_schedule(logical_clock, request_list, len_request, need_schedule);
 
         memset(driver_volume, 0, sizeof(int) * _driver_num);
+        memset(driver_capacity, 0, sizeof(int) * _driver_num);
 
+
+        // result[i]表示标号为i的driver的结果
         for (int i = 0; i < _driver_num; i++)
         {
-            result[i].DriverID = driver_list[i].DriverID;
+            result[i].DriverID = i;
             result[i].LogicalClock = logical_clock;
             result[i].len_RequestList = 0;
-            // cerr << "null = " << result[i].RequestList << " " << (void*)result[i].RequestList << '\n';
-
-            driver_capacity[i] = driver_list[i].Capacity;
+            // driver_capacity[i] = driver_list[i].Capacity;
         }
-
-        // cerr << "ns size = " << need_schedule.size() << " get schedule end\n";
+        for (int i=0; i < len_driver; i++) {
+            Driver& dr = driver_list[i];
+            driver_capacity[dr.DriverID] = dr.Capacity;
+        }
 
         vector<int>().swap(matchDriver);
         vector<int>().swap(finalMatchDriver);
@@ -255,32 +262,14 @@ public:
         finalMatchDriver.resize(need_schedule.size());
         survive.resize(need_schedule.size());
 
-        // cerr << "begin solve\n";
-
-        // puts("-----------------------------------");
-        // for(int i=0; i<_driver_num; i++) {
-        //     cerr << "vol: " << driver_volume[i] << " cap: " << driver_capacity[i] << '\n';
-        // }
-        // for(int idx =0 ; idx < need_schedule.size(); idx ++ ) {
-        //     if(1) {
-        //         cerr << "id=" << need_schedule[idx].request.RequestID << " val = " << need_schedule[idx].val << " Type = " << need_schedule[idx].request.RequestType << " size = " << need_schedule[idx].request.RequestSize << " logi = " << need_schedule[idx].request.LogicalClock << " time: " << need_schedule[idx].timeout << " [" ;
-        //         for(int k=0; k < need_schedule[idx].request.len_Driver; k ++ )
-        //             cerr << need_schedule[idx].request.Driver[k] <<",";
-        //         cerr << "]\n";
-        //     }
-        // }
-        // puts("-----------------------------------");
-
         // solve 贪心算法
         double bestAns = -1e9;
         int epochs = 50;
         for (int i = 0; i < epochs; i++)
         {
             double nowans = solveGreedy(driver_volume, driver_capacity);
-            // cerr << "solve over\n";
             if (nowans > bestAns)
             {
-                // cerr << "begin match\n";
                 bestAns = nowans;
 
                 // cerr << "match over\n";
@@ -290,7 +279,6 @@ public:
                     if (finalMatchDriver[j] != -1)
                         survive[j]++;
                 }
-                // cerr << "max survive = " << *max_element(survive.begin(), survive.end()) << endl;
             }
         }
 
@@ -305,7 +293,6 @@ public:
             if (matchDriver[j] != -1) {
                 valRequest &rq = need_schedule[j];
                 driver_volume[matchDriver[j]] += rq.request.RequestSize;
-                // credits += rq.val * rq.request.RequestSize;
             }
         }
 
@@ -382,27 +369,14 @@ public:
             }
         }
 
-        // puts("-----------------------------------");
-        // for(int i=0; i<_driver_num; i++) {
-        //     cerr << "vol: " << driver_volume[i] << " cap: " << driver_capacity[i] << '\n';
-        // }
-        // for(int idx =0 ; idx < need_schedule.size(); idx ++ ) {
-        //     if(finalMatchDriver[idx] == -1) {
-        //         cerr << "id=" << need_schedule[idx].request.RequestID << " val = " << need_schedule[idx].val << " Type = " << need_schedule[idx].request.RequestType << " size = " << need_schedule[idx].request.RequestSize << " logi = " << need_schedule[idx].request.LogicalClock << " time: " << need_schedule[idx].timeout << " [" ;
-        //         for(int k=0; k < need_schedule[idx].request.len_Driver; k ++ )
-        //             cerr << need_schedule[idx].request.Driver[k] <<",";
-        //         cerr << "]\n";
-        //     }
-        // }
-        // puts("-----------------------------------");
-
-        // cout <<(void*)(result) << " delete end\n";
         delete[] driver_volume;
         delete[] driver_capacity;
-
-        // delete[] request_list;
-        // delete[] driver_list;
-
+        // for (int i=0; i<_driver_num; i++) {
+        //     cerr << result[i].len_RequestList << " ID = " << result[i].DriverID << ' ';
+        //     for (int j=0; j < result[i].len_RequestList; j++)
+        //         cerr << result[i].RequestList[j] << ' ';
+        //     cerr << '\n';
+        // }
         return result;
     }
 

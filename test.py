@@ -28,7 +28,7 @@ def get_json_data(file_path):
                 status_table['request_list'].append(json_line)
 
     driver_statues_table=pd.DataFrame(status_table['driver_statues']).groupby('LogicalClock').apply(lambda x:x.to_dict(orient='records')).to_dict()
-    driver_num=len(driver_statues_table[0])
+    driver_num=max([len(table) for table in driver_statues_table.values()])
     request_list_table=pd.DataFrame(status_table['request_list']).groupby('LogicalClock').apply(lambda x:x.to_dict(orient='records')).to_dict()
     return driver_statues_table,request_list_table,driver_num
 
@@ -64,10 +64,10 @@ def validate(driver_statues, request_table, schedule_result):
         
         assert data_requested==0, f"In logical_clock {logical_clock} some request are invalisd to the constraint data, please check your code."
         
+        # print(schedule_list)
+        device_requested=sum([sum([(schedule_device['DriverID'] not in request_table[task]['Driver']) for task in schedule_device['RequestList']]) for i,schedule_device  in enumerate(schedule_list)])
         
-        device_requested=sum([sum([(i not in request_table[task]['Driver']) for task in schedule_device['RequestList']]) for i,schedule_device  in enumerate(schedule_list)])
-        
-        assert device_requested==0, f"In logical_clock {logical_clock} some request are invalisd to the constraint device, please check your code."
+        assert device_requested==0, "In logical_clock {} some request are invalisd to the constraint device, please check your code.".format(logical_clock)
         
 
 def get_score(driver_statues, request_table, schedule_result):
