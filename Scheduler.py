@@ -101,7 +101,7 @@ class FinalScheduler(Scheduler):
         for driver in driver_statues:
             C_driver_statues.append(self.Driver(driver['DriverID'],driver['Capacity'],driver['LogicalClock']))
 
-        C_schedule_result=self.lib.C_schedule(self.obj,logical_clock,(self.Request * len(C_request_list))(*C_request_list),len(C_request_list),(self.Driver * len(C_driver_statues))(*C_driver_statues),self.driver_num)
+        C_schedule_result=self.lib.C_schedule(self.obj,logical_clock,(self.Request * len(C_request_list))(*C_request_list),len(C_request_list),(self.Driver * len(C_driver_statues))(*C_driver_statues),len(C_driver_statues))
         
         Results=[]
         for i in range(self.driver_num):
