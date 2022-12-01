@@ -62,9 +62,17 @@ def simulate(driver_statues, request_list, driver_num,schedule_func):
 def validate(driver_statues, request_table, schedule_result):
     # validation
     for logical_clock,schedule_list in enumerate(schedule_result):
-        driver_cur_statues=driver_statues[logical_clock]
-        data_requested=sum([sum([request_table[task]['RequestSize'] for task in schedule_device['RequestList']])>driver_cur_statues[i]['Capacity'] for i,schedule_device in enumerate(schedule_list)])
+        driver_cur_statues={driver['DriverID']:driver for driver in driver_statues[logical_clock]}
         
+        # import pdb;pdb.set_trace()
+        data_requested=sum([sum([request_table[task]['RequestSize'] for task in schedule_device['RequestList']])>driver_cur_statues[schedule_device['DriverID']]['Capacity'] for schedule_device in schedule_list])
+        # data_requested=sum([sum([request_table[task]['RequestSize'] for task in schedule_device['RequestList']])>driver_statues[199][schedule_device['DriverID']]['Capacity'] for schedule_device in schedule_list])
+        # print(logical_clock)
+        # if logical_clock==199:
+        #     import pdb;pdb.set_trace()
+        # logical_clock=199, Driver={'DriverID': 2, 'Capacity': 25200, 'LogicalClock': 199}, requests={'RequestID': 456961, 'RequestType': 'FE', 'SLA': 12, 'Driver': [2, 117, 163, 174, 185, 221, 257, 385, 389, 616, 649, 696, 702, 740, 762, 765, 775, 842, 976], 'RequestSize': 26051, 'LogicalClock': 183};{'RequestID': 495212, 'RequestType': 'EM', 'SLA': 1, 'Driver': [2, 18, 162, 281, 296, 317, 372, 469, 487, 504, 530, 549, 554, 673, 720, 733, 786, 806, 810, 815, 865, 941, 967, 993, 999], 'RequestSize': 14697, 'LogicalClock': 199}
+        # 2 493868 495431  [30376, 11384] {'DriverID': 2, 'RequestList': [493868, 495431], 'LogicalClock': 199}
+        # print(logical_clock)
         assert data_requested==0, f"In logical_clock {logical_clock} some request are invalisd to the constraint data, please check your code."
         
         # print(schedule_list)

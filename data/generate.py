@@ -27,9 +27,12 @@ def generate_data(file,num_dr,num_t,max_rqs,max_bw,bw_ratio):
         # Generate drivers data
         bw_dr=[]
         for id_dr in range(num_dr):
-            bw=int(trunc_nomal(max_bw/2,max_bw/6,0,max_bw))*100
+            bw=int(trunc_nomal(max_bw/2,max_bw/3,0,max_bw))*100
+            if bw<max_bw/8:
+                bw=0
             bw_dr.append(bw)
-            file.write(str_dr(id_dr,bw,clk))
+            if bw!=0:
+                file.write(str_dr(id_dr,bw,clk))
         sum_bw=sum(bw_dr)
         num_rqs=int(trunc_nomal(max_rqs/2,max_rqs/6,1,max_rqs))
 
@@ -59,7 +62,7 @@ def generate_data(file,num_dr,num_t,max_rqs,max_bw,bw_ratio):
     for id_dr in range(num_dr):
         bw=int(trunc_nomal(max_bw/2,max_bw/6,1,max_bw))*100
         bw_dr.append(bw)
-        file.write(str_dr(id_dr,bw,clk))
+        file.write(str_dr(id_dr,bw,clk+1))
     sum_bw=sum(bw_dr)
     num_rqs=int(trunc_nomal(max_rqs/2,max_rqs/6,1,max_rqs))
 
