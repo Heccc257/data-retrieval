@@ -267,18 +267,6 @@ public:
         matchDriver.resize(need_schedule.size());
         finalMatchDriver.resize(need_schedule.size());
         survive.resize(need_schedule.size());
-        // for (int i = 0; i < matchDriver.size(); i++)
-        // {
-        //     matchDriver[i] = -1;
-        // }
-        // for (int i = 0; i < finalMatchDriver.size(); i++)
-        // {
-        //     finalMatchDriver[i] = -1;
-        // }
-        // for (int i = 0; i < survive.size(); i++)
-        // {
-        //     survive[i] = 0;
-        // }
 
         // solve 贪心算法
         double bestAns = -1e9;
@@ -318,24 +306,10 @@ public:
         double middleans = bestAns;
         std::vector<int> middleMatchDriver = finalMatchDriver;
 
-        double startans = middleans;
-        auto startMatchDriver = middleMatchDriver;
-
-        const int sa_time = 32;
-
-        for (int times = sa_time, n = need_schedule.size(); times--;)
+        for (int times = 32, n = need_schedule.size(); times--;)
         {
-            if (times > sa_time / 2)
-            {
-                bestAns = startans;
-                finalMatchDriver = startMatchDriver;
-            }
-            else
-            {
-                bestAns = middleans;
-                finalMatchDriver = middleMatchDriver;
-            }
-            matchDriver = finalMatchDriver;
+            bestAns = middleans;
+            finalMatchDriver = middleMatchDriver;
 
             for (int i = 0; i < _driver_num; i++)
                 driver_volume[i] = 0;
@@ -360,8 +334,7 @@ public:
             {
                 std::set<int> changelist;
                 int k = n * temp;
-                // k = std::min(k, 1); //-2283673253.5
-                k = std::min(k, 100); // 2277965.0
+                k = std::min(k, 100);
                 k = std::max(k, 1);
                 double nowans = bestAns;
                 while (k--)
@@ -455,6 +428,22 @@ public:
                 result[i].RequestList = nullptr;
         }
         matchDriver2Result(result, finalMatchDriver, need_schedule, driver_volume, driver_capacity);
+
+        // if (logical_clock == 199) {
+        //     std::cerr << result[2].DriverID << '\n';
+        //     assert(result[2].len_RequestList == 1);
+        //     std::cerr << result[2].RequestList[0] << '\n';
+        //     std::cerr << driver_volume[2] << ' ' << driver_capacity[2] << '\n';
+        // }
+        // for (int i = 0; i < min(100, _driver_num); i++)
+        // {
+        //     std::cerr << result[i].DriverID << " ";
+        //     for (int j = 0; j < result[i].len_RequestList; ++j)
+        //     {
+        //         std::cerr << result[i].RequestList[j] << " ";
+        //     }
+        //     std::cerr << "\n";
+        // }
 
         // 删除已经处理的请求
         for (int idx = 0; idx < need_schedule.size(); idx++)
