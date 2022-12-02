@@ -267,6 +267,18 @@ public:
         matchDriver.resize(need_schedule.size());
         finalMatchDriver.resize(need_schedule.size());
         survive.resize(need_schedule.size());
+        // for (int i = 0; i < matchDriver.size(); i++)
+        // {
+        //     matchDriver[i] = -1;
+        // }
+        // for (int i = 0; i < finalMatchDriver.size(); i++)
+        // {
+        //     finalMatchDriver[i] = -1;
+        // }
+        // for (int i = 0; i < survive.size(); i++)
+        // {
+        //     survive[i] = 0;
+        // }
 
         // solve 贪心算法
         double bestAns = -1e9;
@@ -341,7 +353,7 @@ public:
             std::random_device rd;
             srand(rd());
             double temp = 1;
-            double velo = 0.997;
+            double velo = 0.999;
             double momentum = 0.99;
             bool changed;
             while (temp > 1e-14)
