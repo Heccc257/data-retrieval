@@ -6,7 +6,7 @@ parser.add_option('--num_drivers',type="int",default=4) # （最大）磁带驱�
 parser.add_option('--max_requests',type="int",default=100) # 最大请求数量
 parser.add_option('--max_bandwidth',type="int",default=50) # 每个磁带驱动器最大负载（x100)
 parser.add_option('--rqs2dr_bwratio',type="float",default=1.5) # 每小时请求总数据量与总负载量之比（由于每个请求都必须可以被磁带驱动器满足，实际比值要小于此值）
-parser.add_option('--output_file',type="string",default="/root/data-retrieval/data") # 输出文件夹
+parser.add_option('--output_file',type="string",default="/home/steven/Course/HUAWEI/data-retrieval/data") # 输出文件夹
 parser.add_option('--schedule_time',type="int",default=200)
 (options, args) = parser.parse_args()
 

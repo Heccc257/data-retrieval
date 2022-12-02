@@ -306,8 +306,38 @@ public:
         double middleans = bestAns;
         std::vector<int> middleMatchDriver = finalMatchDriver;
 
-        for (int times = 64, n = need_schedule.size(); times--;)
+        double startans = middleans;
+        auto startMatchDriver = middleMatchDriver;
+
+        const int sa_time = 128;
+
+        for (int times = sa_time, n = need_schedule.size(); times--;)
         {
+            if (times > sa_time / 2)
+            {
+                bestAns = startans;
+                finalMatchDriver = startMatchDriver;
+            }
+            else
+            {
+                bestAns = middleans;
+                finalMatchDriver = middleMatchDriver;
+            }
+            matchDriver = finalMatchDriver;
+
+            for (int i = 0; i < _driver_num; i++)
+                driver_volume[i] = 0;
+
+            for (int j = 0; j < need_schedule.size(); j++)
+            {
+                matchDriver[j] = finalMatchDriver[j];
+                if (matchDriver[j] != -1)
+                {
+                    valRequest &rq = need_schedule[j];
+                    driver_volume[matchDriver[j]] += rq.request.RequestSize;
+                }
+            }
+
             std::random_device rd;
             srand(rd());
             double temp = 1;
@@ -399,22 +429,6 @@ public:
                 result[i].RequestList = nullptr;
         }
         matchDriver2Result(result, finalMatchDriver, need_schedule, driver_volume, driver_capacity);
-
-        // if (logical_clock == 199) {
-        //     std::cerr << result[2].DriverID << '\n';
-        //     assert(result[2].len_RequestList == 1);
-        //     std::cerr << result[2].RequestList[0] << '\n';
-        //     std::cerr << driver_volume[2] << ' ' << driver_capacity[2] << '\n';
-        // }
-        // for (int i = 0; i < min(100, _driver_num); i++)
-        // {
-        //     std::cerr << result[i].DriverID << " ";
-        //     for (int j = 0; j < result[i].len_RequestList; ++j)
-        //     {
-        //         std::cerr << result[i].RequestList[j] << " ";
-        //     }
-        //     std::cerr << "\n";
-        // }
 
         // 删除已经处理的请求
         for (int idx = 0; idx < need_schedule.size(); idx++)
