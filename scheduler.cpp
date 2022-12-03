@@ -116,7 +116,8 @@ struct valRequest
 
         // EM立即处理
         if (request.RequestType == EM)
-            return 2.0;
+            // return 2.0 ;
+            return 2.0 * ceil(1.0 * request.RequestSize / 50) / request.RequestSize;
 
         // 后台取回必须<12
         if (request.RequestType == BE)
