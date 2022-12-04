@@ -190,15 +190,9 @@ public:
 
     void get_need_schedule(int logical_clock, Request *request_list, int len_request, vector<valRequest> &need_schedule)
     {
-        // need_schedule.clear();
-
-        // for(int i=0; i<len_request; i++)
-        //     need_schedule.push_back(valRequest(logical_clock, *(request_list+i)));
-
         vector<Request> rq;
         for (auto c : need_schedule)
         {
-            // cerr << "need_schedule : log = " << c.request.LogicalClock << '\n';
             rq.push_back(c.request);
         }
         for (int i = 0; i < len_request; i++)
@@ -207,7 +201,6 @@ public:
         need_schedule.clear();
         for (auto c : rq)
         {
-            // cerr << "rq: log = " << c.LogicalClock << '\n';
             need_schedule.push_back(valRequest(logical_clock, c));
         }
         sort(need_schedule.begin(), need_schedule.end());
@@ -230,8 +223,6 @@ public:
                 assert(a[drID] <= b[drID]);
             }
         }
-        // for (int i = 0; i < _driver_num; i++)
-        // assert(result[i].len_RequestList == procNum[i]);
     }
 
     const long long mod = 1e9 + 7;
@@ -266,8 +257,6 @@ public:
     double change(int pos, double credits, int *driver_volume, int *driver_capacity, bool &changed);
     void recover(int pos, int *driver_volume, int *driver_capacity);
     double disturb(int *driver_volume, int *driver_capacity, double temp, const std::vector<int> &p);
-
-
 
 private:
     int _driver_num;
