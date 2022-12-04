@@ -254,9 +254,10 @@ public:
 
 public:
     int gendisturb(double temp);
-    double change(int pos, double credits, int *driver_volume, int *driver_capacity, bool &changed);
-    void recover(int pos, int *driver_volume, int *driver_capacity);
+    double change(int pos, double credits, int *driver_volume, int *driver_capacity, bool &changed, std::vector<int>& middleMatchDriver);
+    void recover(int pos, int *driver_volume, int *driver_capacity, std::vector<int>& middleMatchDriver);
     double disturb(int *driver_volume, int *driver_capacity, double temp, const std::vector<int> &p);
+    void solveSA(double &bestAns, int *driver_volume, int *driver_capacity);
 
 private:
     int _driver_num;

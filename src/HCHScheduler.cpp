@@ -44,113 +44,16 @@ Result* FinalScheduler::C_schedule(int logical_clock, Request *request_list, int
     vector<int>().swap(matchDriver);
     vector<int>().swap(finalMatchDriver);
     vector<int>().swap(survive);
-    matchDriver.resize(need_schedule.size());
-    finalMatchDriver.resize(need_schedule.size());
-    survive.resize(need_schedule.size());
+    matchDriver.resize(need_schedule.size(), -1);
+    finalMatchDriver.resize(need_schedule.size(), -1);
+    survive.resize(need_schedule.size(), 0);
 
     double bestAns = -1e9;
 
 /********************** Processing **********************/
     solveGreedy(bestAns, driver_volume, driver_capacity);
 
-    double credits = 0;
-
-    for (int i = 0; i < _driver_num; i++)
-        driver_volume[i] = 0;
-
-    for (int j = 0; j < need_schedule.size(); j++)
-    {
-        matchDriver[j] = finalMatchDriver[j];
-        if (matchDriver[j] != -1)
-        {
-            valRequest &rq = need_schedule[j];
-            driver_volume[matchDriver[j]] += rq.request.RequestSize;
-        }
-    }
-
-    double middleans = bestAns;
-    std::vector<int> middleMatchDriver = finalMatchDriver;
-
-    double startans = middleans;
-    auto startMatchDriver = middleMatchDriver;
-
-    const int sa_time = 4;
-
-    for (int times = sa_time, n = need_schedule.size(); times--;)
-    {
-        if (times > sa_time / 2)
-        {
-            bestAns = startans;
-            finalMatchDriver = startMatchDriver;
-        }
-        else
-        {
-            bestAns = middleans;
-            finalMatchDriver = middleMatchDriver;
-        }
-        matchDriver = finalMatchDriver;
-
-        for (int i = 0; i < _driver_num; i++)
-            driver_volume[i] = 0;
-
-        for (int j = 0; j < need_schedule.size(); j++)
-        {
-            matchDriver[j] = finalMatchDriver[j];
-            if (matchDriver[j] != -1)
-            {
-                valRequest &rq = need_schedule[j];
-                driver_volume[matchDriver[j]] += rq.request.RequestSize;
-            }
-        }
-
-        std::random_device rd;
-        srand(rd());
-        double temp = 1;
-        double velo = 0.997;
-        double momentum = 0.99;
-        bool changed;
-        while (temp > 1e-14)
-        {
-            std::set<int> changelist;
-            int k = n * temp;
-            // k = std::min(k, 1); //-2283673253.5
-            k = std::min(k, 100); // 2277965.0
-            k = std::max(k, 1);
-            double nowans = bestAns;
-            while (k--)
-            {
-                int pos = rand() % n;
-
-                if (changelist.count(pos))
-                    continue;
-
-                nowans = change(pos, nowans, driver_volume, driver_capacity, changed);
-                if (changed)
-                    changelist.insert(pos);
-            }
-            double delta = bestAns - nowans;
-            if (delta < 0 || exp(-delta / temp) * RAND_MAX > rand())
-            {
-                bestAns = nowans;
-                for (int pos : changelist)
-                    finalMatchDriver[pos] = matchDriver[pos];
-            }
-            else
-            {
-                for (int pos : changelist)
-                    recover(pos, driver_volume, driver_capacity);
-            }
-            temp *= velo;
-        }
-        if (bestAns > middleans)
-        {
-            vector<int>().swap(middleMatchDriver);
-            middleans = bestAns;
-            middleMatchDriver = finalMatchDriver;
-        }
-    }
-
-    finalMatchDriver = middleMatchDriver;
+    solveSA(bestAns, driver_volume, driver_capacity);
 
 /********************** Post-processing **********************/ 
     for (int i = 0; i < _driver_num; i++)
@@ -181,8 +84,6 @@ Result* FinalScheduler::C_schedule(int logical_clock, Request *request_list, int
         assert(driver_volume[i] <= driver_capacity[i]);
         driver_volume[i] = 0;
     }
-
-    std::vector<int>().swap(middleMatchDriver);
 
     // 分配内存
 
