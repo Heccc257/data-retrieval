@@ -10,6 +10,10 @@
 #include <cassert>
 #include <ctime>
 
+
+#define LOGERR(output) cerr << output << '\n';
+// #define LOGERR(output) if(false) while(false);
+
 using namespace std;
 struct Request
 {
@@ -270,10 +274,51 @@ public:
         survive.resize(need_schedule.size());
 
 
+        int newBestTimes = 0;
         // solve 贪心算法
         double bestAns = -1e9;
         int epochs = 50;
+
+        // 保护数量线性增加
         int numProtect = 0;
+        for (int i = 0; i < epochs; i++)
+        {
+            double nowans = solveGreedy(driver_volume, driver_capacity, numProtect);
+            if (nowans > bestAns)
+            {
+                bestAns = nowans;
+                for (int j = 0; j < matchDriver.size(); j++)
+                {
+                    finalMatchDriver[j] = matchDriver[j];
+                    if (finalMatchDriver[j] != -1)
+                        survive[j]++;
+                }
+            }
+            numProtect += need_schedule.size() / epochs;
+        }
+
+        // 保护数量线性减少
+        numProtect = need_schedule.size();
+        for (int i = 0; i < epochs; i++)
+        {
+            double nowans = solveGreedy(driver_volume, driver_capacity, numProtect);
+            if (nowans > bestAns)
+            {
+                bestAns = nowans;
+                for (int j = 0; j < matchDriver.size(); j++)
+                {
+                    finalMatchDriver[j] = matchDriver[j];
+                    if (finalMatchDriver[j] != -1)
+                        survive[j]++;
+                }
+            }
+
+            numProtect -= need_schedule.size() / epochs;
+        }
+
+        // 保护数量平方增加
+        survive.clear();
+        numProtect = 0;
         for (int i = 0; i < epochs; i++)
         {
             double nowans = solveGreedy(driver_volume, driver_capacity, numProtect);
@@ -289,7 +334,34 @@ public:
                         survive[j]++;
                 }
             }
+            numProtect = need_schedule.size() * pow(i+1, 2) / (epochs * epochs);
         }
+
+        // 保护数量平方减少
+        numProtect = need_schedule.size();
+        for (int i = 0; i < epochs; i++)
+        {
+            double nowans = solveGreedy(driver_volume, driver_capacity, numProtect);
+            if (nowans > bestAns)
+            {
+                bestAns = nowans;
+
+                // cerr << "match over\n";
+                for (int j = 0; j < matchDriver.size(); j++)
+                {
+                    finalMatchDriver[j] = matchDriver[j];
+                    if (finalMatchDriver[j] != -1)
+                        survive[j]++;
+                }
+            }
+            numProtect = need_schedule.size() * (pow(epochs-i-1, 2)) / (epochs * epochs);
+        }
+
+        survive.clear();
+        // LOGERR("new Best Times = " << newBestTimes)
+
+
+
 
         double credits = 0;
 
@@ -312,7 +384,7 @@ public:
         double startans = middleans;
         auto startMatchDriver = middleMatchDriver;
 
-        const int sa_time = 0;
+        const int sa_time = 4;
 
         for (int times = sa_time, n = need_schedule.size(); times--;)
         {
@@ -475,6 +547,9 @@ public:
         return base;
     }
 
+    void solveGreedy(double &bestAns, vector<int> &matchDriver, vector<int> &finalMatchDriver, vector<int> &survive) {
+        
+    }
     double solveGreedy(int *driver_volume, int *driver_capacity, int numProtect)
     {
         random_device rd;
@@ -515,7 +590,7 @@ public:
                     break;
                 }
             }
-            if (idx >= numProtect && deny > 0.8)
+            if (idx >= numProtect && deny > 0.75)
                 deny *= 0.99;
         }
 
@@ -542,6 +617,7 @@ public:
 
         return credits;
     }
+    
 
     int gendisturb(double temp)
     {
