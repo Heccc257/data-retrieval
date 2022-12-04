@@ -322,7 +322,7 @@ public:
         double startans = middleans;
         auto startMatchDriver = middleMatchDriver;
 
-        const int sa_time = 32;
+        const int sa_time = 0;
 
         for (int times = sa_time, n = need_schedule.size(); times--;)
         {
