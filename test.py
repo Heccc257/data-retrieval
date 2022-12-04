@@ -10,7 +10,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--scheduler', type=str, default='FinalScheduler', help='The name of the schedule function')
-parser.add_argument('--data_dir', type=str, default='data/', help='The path of the data')
+parser.add_argument('--data_dir', type=str, default='data/Demo.log', help='The path of the data')
 parser.add_argument('--times',type=int,default=1)
 parser.add_argument('--submit',action='store_true')
 cfg=parser.parse_args()
@@ -107,6 +107,9 @@ def get_score(driver_statues, request_table, schedule_result):
 
 
 if __name__ == '__main__':
+    if os.path.exists('build'):
+        os.system('rm -rf build')
+    os.makedirs('build',exist_ok=True)
     if cfg.submit:
         from Scheduler import *
         schedulers = ['FinalScheduler']
