@@ -3,13 +3,15 @@ import os
 import re
 import pandas as pd
 import numpy  as np
-from Scheduler import *
+import sys
 import time
 import argparse
+from Scheduler import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--schedule_func', type=str, default='CScheduler', help='The name of the schedule function')
-parser.add_argument('--data_dir', type=str, default='data/Demo.log', help='The path of the data')
+parser.add_argument('--schedule_func', type=str, default='FinalScheduler', help='The name of the schedule function')
+parser.add_argument('--data_dir', type=str, default='data/', help='The path of the data')
+parser.add_argument('--times',type=int,default=1)
 cfg=parser.parse_args()
 
 
@@ -113,15 +115,31 @@ def get_score(driver_statues, request_table, schedule_result):
 
 if __name__ == '__main__':
     os.system('make')
-    data_dir=cfg.data_dir
-    print("get data")
-    driver_statues, request_list, driver_num=get_json_data(data_dir)
-    request_table=sum([request for request in request_list.values()],[])
-    driver_table=sum([driver for driver in driver_statues.values()],[])
-    print("simulating")
-    schedule_result=simulate(driver_statues, request_list, driver_num,FinalScheduler)
-    print("validating")
-    validate(driver_statues, request_table, schedule_result)
-    print("scoring")
-    score=get_score(driver_statues, request_table, schedule_result)
-    print(f"Your score is {score}")
+    scores={}
+    data=[]
+    if(cfg.data_dir=='data/'):
+        data=['data/'+d for d in os.listdir(cfg.data_dir) if d[-1]=='g']
+    else:
+        data=[cfg.data_dir]
+        
+    scheduler= globals()[cfg.schedule_func]
+
+    for data_dir in data:
+        print("get data")
+        driver_statues, request_list, driver_num=get_json_data(data_dir)
+        request_table=sum([request for request in request_list.values()],[])
+        driver_table=sum([driver for driver in driver_statues.values()],[])
+        
+        
+        scores[data_dir.replace('data/','').replace('.log','')]=[]
+        for i in range(cfg.times):
+            print("simulating")
+            schedule_result=simulate(driver_statues, request_list, driver_num,scheduler)
+            print("validating")
+            validate(driver_statues, request_table, schedule_result)
+            print("scoring")
+            score=get_score(driver_statues, request_table, schedule_result)
+            print(f"Your score is {score}")
+            scores[data_dir.replace('data/','').replace('.log','')].append(score)
+    for k,v in scores.items():
+        print(f"{k} :\t {v}")
