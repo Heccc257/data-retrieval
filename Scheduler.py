@@ -68,7 +68,7 @@ class FinalScheduler(Scheduler):
 
         
     def __init__(self):
-        self.lib = cdll.LoadLibrary('./myscheduler.so')
+        self.lib = cdll.LoadLibrary('build/myFinalScheduler.so')
         
         self.lib.C_new.argtypes = []
         self.lib.C_new.restype = c_void_p
