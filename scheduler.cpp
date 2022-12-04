@@ -268,25 +268,15 @@ public:
         matchDriver.resize(need_schedule.size());
         finalMatchDriver.resize(need_schedule.size());
         survive.resize(need_schedule.size());
-        // for (int i = 0; i < matchDriver.size(); i++)
-        // {
-        //     matchDriver[i] = -1;
-        // }
-        // for (int i = 0; i < finalMatchDriver.size(); i++)
-        // {
-        //     finalMatchDriver[i] = -1;
-        // }
-        // for (int i = 0; i < survive.size(); i++)
-        // {
-        //     survive[i] = 0;
-        // }
+
 
         // solve 贪心算法
         double bestAns = -1e9;
         int epochs = 50;
+        int numProtect = 0;
         for (int i = 0; i < epochs; i++)
         {
-            double nowans = solveGreedy(driver_volume, driver_capacity);
+            double nowans = solveGreedy(driver_volume, driver_capacity, numProtect);
             if (nowans > bestAns)
             {
                 bestAns = nowans;
@@ -485,7 +475,7 @@ public:
         return base;
     }
 
-    double solveGreedy(int *driver_volume, int *driver_capacity)
+    double solveGreedy(int *driver_volume, int *driver_capacity, int numProtect)
     {
         random_device rd;
         int base = rd() % mod;
@@ -508,7 +498,7 @@ public:
                 continue;
 
             // 随机踢出
-            if (1.0 * (randGen(base, p) % mod) / mod - survive[idx] / 20.0 > deny)
+            if ( idx >= numProtect && (1.0 * (randGen(base, p) % mod) / mod - survive[idx] / 20.0 > deny) )
                 continue;
 
             int bgDriver = randGen(base, p);
@@ -525,7 +515,7 @@ public:
                     break;
                 }
             }
-            if (deny > 0.8)
+            if (idx >= numProtect && deny > 0.8)
                 deny *= 0.99;
         }
 
