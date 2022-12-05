@@ -125,8 +125,8 @@ if __name__ == '__main__':
     # make handin
     if os.path.exists('handin') == False:
         os.makedirs('handin',exist_ok=True)
-    handoutList = " Scheduler.py please\ README\ first.md build "
-    os.system(f'cp -rf {handoutList} handin')
+    handinList = " Scheduler.py please\ README\ first.md build "
+    os.system(f'cp -rf {handinList} handin')
     os.system('touch handin/请一定看看\ please\ REDAME\ first.md!!!')
     
     data=[]
