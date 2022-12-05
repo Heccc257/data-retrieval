@@ -116,8 +116,10 @@ if __name__ == '__main__':
     else:
         from SchedulerForDev import *
         schedulers=cfg.scheduler.split(',')
+
+    appendSrc = " src/anneal.cpp src/greedy.cpp src/scheduler.h "
     for s in schedulers:
-        os.system(f'g++ --shared src/{s}.cpp -o build/my{s}.so -fPIC -O3')
+        os.system(f'g++ --shared src/{s}.cpp {appendSrc} -o build/my{s}.so -fPIC -O3')
     scores={s:{} for s in schedulers}
     
     # make handout
