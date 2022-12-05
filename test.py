@@ -121,8 +121,13 @@ if __name__ == '__main__':
     for s in schedulers:
         os.system(f'g++ --shared src/{s}.cpp {appendSrc} -o build/my{s}.so -fPIC -O3')
     scores={s:{} for s in schedulers}
-        
-
+    
+    # make handin
+    if os.path.exists('handin') == False:
+        os.makedirs('handin',exist_ok=True)
+    handinList = " Scheduler.py please\ README\ first.md build "
+    os.system(f'cp -rf {handinList} handin')
+    os.system('touch handin/请一定看看\ please\ REDAME\ first.md!!!')
     
     data=[]
     if(cfg.data_dir=='data/'):
