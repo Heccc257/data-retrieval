@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 import json
 from ctypes import *
-
+import inspect
 
 
 
@@ -68,7 +68,10 @@ class FinalScheduler(Scheduler):
 
         
     def __init__(self):
-        self.lib = cdll.LoadLibrary('build/myFinalScheduler.so')
+        current_file_name = inspect.getfile(inspect.currentframe())
+        so=current_file_name.replace('Scheduler.py','')+'build/myFinalScheduler.so'
+        self.lib = cdll.LoadLibrary(so)
+        # self.lib = cdll.LoadLibrary('build/myFinalScheduler.so')
         
         self.lib.C_new.argtypes = []
         self.lib.C_new.restype = c_void_p

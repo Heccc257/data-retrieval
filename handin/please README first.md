@@ -1,8 +1,15 @@
 # data-retrieval
 
 ## 评测注意事项！！！
-### `scheduler.py`会调用`build/myFinalScheduler.so`。所以请**务必**将`build`**文件夹**放在工作目录下，否则`scheduler.py`无法找到
-### 例：
+### `scheduler.py`会调用`build/myFinalScheduler.so`。所以请**务必**将`build`**文件夹**与`scheduler.py`放在**同一目录下**，否则`scheduler.py`无法找到该动态链接库
+### 目录结构应该类似于
+```
+.
+├── Scheduler.py
+└── build
+    └── myFinalScheduler.so
+```
+
 
 <center/> FishCatcher </center>
 
