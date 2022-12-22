@@ -226,9 +226,9 @@ public:
     }
 
     const long long mod = 1e9 + 7;
-    int randGen(int &base, int p)
+    int randGen(int &base, int p, int b)
     {
-        base = 1ll * base * p % mod;
+        base = (1ll * base * p + b) % mod;
         return base;
     }
 
@@ -258,6 +258,8 @@ public:
     void recover(int pos, int *driver_volume, int *driver_capacity, std::vector<int>& middleMatchDriver);
     double disturb(int *driver_volume, int *driver_capacity, double temp, const std::vector<int> &p);
     void solveSA(double &bestAns, int *driver_volume, int *driver_capacity);
+    void runSA(double &bestAns, int numLocked, int *driver_volume, int *driver_capacity);
+    double copyToMatchDriver(std::vector<int> &fromMatchDriver, int *driver_volume, int *driver_capacity);
 
 private:
     int _driver_num;
