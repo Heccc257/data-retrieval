@@ -121,4 +121,58 @@ void FinalScheduler::solveGreedy(double &bestAns, int *driver_volume, int *drive
         ansCompete(bestAns, nowans, matchDriver, finalMatchDriver, survive);
     }
     // LOGERR("new Best Times = " << newBestTimes)
+    int T = 5;
+    epochs = 30;
+    while (T--) {
+        int numProtect = 0;
+        survive.clear();
+        for (int i = 0; i < epochs; i++)
+        {
+            double nowans = solveGreedy(driver_volume, driver_capacity, numProtect); 
+            ansCompete(bestAns, nowans, matchDriver, finalMatchDriver, survive);
+            numProtect += need_schedule.size() / epochs;
+        }
+
+        // 保护数量线性减少
+        survive.clear();
+        numProtect = need_schedule.size();
+        for (int i = 0; i < epochs; i++)
+        {
+            double nowans = solveGreedy(driver_volume, driver_capacity, numProtect);
+            ansCompete(bestAns, nowans, matchDriver, finalMatchDriver, survive);
+            numProtect -= need_schedule.size() / epochs;
+        }
+
+        // 保护数量平方增加
+        survive.clear();
+        numProtect = 0;
+        for (int i = 0; i < epochs; i++)
+        {
+            double nowans = solveGreedy(driver_volume, driver_capacity, numProtect);
+            ansCompete(bestAns, nowans, matchDriver, finalMatchDriver, survive);
+            numProtect = need_schedule.size() * pow(i+1, 2) / (epochs * epochs);
+        }
+
+        // 保护数量平方减少
+        survive.clear();
+        numProtect = need_schedule.size();
+        for (int i = 0; i < epochs; i++)
+        {
+            double nowans = solveGreedy(driver_volume, driver_capacity, numProtect);
+            ansCompete(bestAns, nowans, matchDriver, finalMatchDriver, survive);
+            numProtect = need_schedule.size() * (pow(epochs-i-1, 2)) / (epochs * epochs);
+        }
+
+        // 保护数量平方随机
+        std::random_device randomNumProtect;
+        srand(randomNumProtect());
+        survive.clear();
+        for (int i = 0; i < epochs; i++)
+        {
+            numProtect = 1.0 * rand() / RAND_MAX * need_schedule.size();
+            double nowans = solveGreedy(driver_volume, driver_capacity, numProtect);
+            ansCompete(bestAns, nowans, matchDriver, finalMatchDriver, survive);
+        }
+        // LOGERR("new Best Times = " << newBestTimes)
+    }
 }
