@@ -64,7 +64,7 @@ Result* FinalScheduler::C_schedule(int logical_clock, Request *request_list, int
             driver_volume[finalMatchDriver[i]] += need_schedule[i].request.RequestSize;
 
     for (int idx = 0; idx < need_schedule.size(); idx++)
-        if (finalMatchDriver[idx] != -1)
+        if (finalMatchDriver[idx] == -1)
         {
             valRequest &rq = need_schedule[idx];
             for (int i = 0; i < rq.request.len_Driver; i++)

@@ -5,9 +5,9 @@ double FinalScheduler::solveGreedy(int *driver_volume, int *driver_capacity, int
     random_device rd;
     int base = rd() % mod;
     int p = rd() % mod;
+    int b = rd() % mod;
     for (int i = 0; i < _driver_num; i++)
         driver_volume[i] = 0;
-    srand(time(NULL));
     double credits = 0;
     double deny = 1;
     // cout << "preproc\n";
@@ -23,10 +23,10 @@ double FinalScheduler::solveGreedy(int *driver_volume, int *driver_capacity, int
             continue;
 
         // 随机踢出
-        if ( idx >= numProtect && (1.0 * (randGen(base, p) % mod) / mod - survive[idx] / 20.0 > deny) )
+        if ( idx >= numProtect && (1.0 * (randGen(base, p, b) % mod) / mod - survive[idx] / 20.0 > deny) )
             continue;
 
-        int bgDriver = randGen(base, p);
+        int bgDriver = randGen(base, p, b);
 
         for (int i = 0; i < rq.request.len_Driver; i++)
         {

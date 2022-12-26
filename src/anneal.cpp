@@ -101,66 +101,76 @@ double FinalScheduler::disturb(int *driver_volume, int *driver_capacity, double 
     return credits;
 }
 
-void FinalScheduler::solveSA(double &bestAns, int *driver_volume, int *driver_capacity) {
+double FinalScheduler::copyToMatchDriver(std::vector<int> &fromMatchDriver, int *driver_volume, int *driver_capacity) {
+    double credits = 0;
+    
     for (int i = 0; i < _driver_num; i++)
         driver_volume[i] = 0;
 
     for (int j = 0; j < need_schedule.size(); j++)
     {
-        matchDriver[j] = finalMatchDriver[j];
+        matchDriver[j] = fromMatchDriver[j];
         if (matchDriver[j] != -1)
         {
             valRequest &rq = need_schedule[j];
             driver_volume[matchDriver[j]] += rq.request.RequestSize;
+            credits += rq.val * rq.request.RequestSize;
+        }
+    }
+    return credits;
+}
+
+void FinalScheduler::runSA(double &bestAns, int numLocked, int *driver_volume, int *driver_capacity) {
+    std::vector<int> startMatchDriver(need_schedule.size(), -1);
+
+    for (int i = 0; i < _driver_num; i++)
+        driver_volume[i] = 0;
+
+    for (int i = 0; i < numLocked; i++) {
+        valRequest &rq = need_schedule[i];
+        int delta = rand() % rq.request.len_Driver;
+        for (int j = 0; j < rq.request.len_Driver; j++)
+        {
+            int drID = rq.request.Driver[(j + delta) % rq.request.len_Driver];
+            if (driver_volume[drID] + rq.request.RequestSize <= driver_capacity[drID])
+            {
+                driver_volume[drID] += rq.request.RequestSize;
+                startMatchDriver[i] = drID;
+                break;
+            }
         }
     }
 
-    double middleAns = bestAns;
-    std::vector<int> middleMatchDriver = finalMatchDriver;
-    auto startMatchDriver = middleMatchDriver;
+    double startAns = copyToMatchDriver(startMatchDriver, driver_volume, driver_capacity);
 
-    const int sa_time = 4;
+    double middleAns = startAns;
+    std::vector<int> middleMatchDriver = startMatchDriver;
 
-    for (int times = sa_time, n = need_schedule.size(); times--;)
-    {
-        if (times > sa_time / 2)
-            middleMatchDriver = startMatchDriver;
-        else
-            middleMatchDriver = finalMatchDriver;
+    const int sa_times = 8;
 
-        middleAns = 0;
+    int n = need_schedule.size();
+    int m = n - numLocked;
 
-        for (int i = 0; i < _driver_num; i++)
-            driver_volume[i] = 0;
+    for (int times = sa_times; times--; ) {
 
-        for (int j = 0; j < need_schedule.size(); j++)
-        {
-            matchDriver[j] = middleMatchDriver[j];
-            if (matchDriver[j] != -1)
-            {
-                valRequest &rq = need_schedule[j];
-                driver_volume[matchDriver[j]] += rq.request.RequestSize;
-                middleAns += rq.val * rq.request.RequestSize;
-            }
-        }
+        middleMatchDriver = startMatchDriver;
+        middleAns = copyToMatchDriver(middleMatchDriver, driver_volume, driver_capacity);
 
         std::random_device rd;
         srand(rd());
         double temp = 1;
         double velo = 0.997;
-        double momentum = 0.99;
         bool changed;
-        while (temp > 1e-14)
+        while (m && temp > 1e-14)
         {
             std::set<int> changelist;
-            int k = n * temp;
-            // k = std::min(k, 1); //-2283673253.5
-            k = std::min(k, 10); // 2277965.0
+            int k = m * temp;
+            k = std::min(k, 10);
             k = std::max(k, 1);
             double nowans = middleAns;
             while (k--)
             {
-                int pos = rand() % n;
+                int pos = rand() % m + numLocked;
 
                 if (changelist.count(pos))
                     continue;
@@ -190,5 +200,11 @@ void FinalScheduler::solveSA(double &bestAns, int *driver_volume, int *driver_ca
             vector<int>().swap(middleMatchDriver);
         }
     }
+}
 
+void FinalScheduler::solveSA(double &bestAns, int *driver_volume, int *driver_capacity) {
+    const int times = 16;
+
+    for (int i = 0; i <= times; i++)
+        runSA(bestAns, need_schedule.size() / times * i, driver_volume, driver_capacity);
 }
