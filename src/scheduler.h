@@ -258,7 +258,7 @@ public:
     void recover(int pos, int *driver_volume, int *driver_capacity, std::vector<int>& middleMatchDriver);
     double disturb(int *driver_volume, int *driver_capacity, double temp, const std::vector<int> &p);
     void solveSA(double &bestAns, int *driver_volume, int *driver_capacity);
-    void runSA(double &bestAns, int numLocked, int *driver_volume, int *driver_capacity);
+    void runSA(double &bestAns, int numLocked, int *driver_volume, int *driver_capacity, bool front);
     double copyToMatchDriver(std::vector<int> &fromMatchDriver, int *driver_volume, int *driver_capacity);
 
 private:

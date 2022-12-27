@@ -16,9 +16,10 @@ double FinalScheduler::change(int pos, double credits, int *driver_volume, int *
     if (matchDriver[pos] == -1)
     {
         changed = false;
+        int offset = rand() % rq.request.len_Driver;
         for (int i = 0; i < rq.request.len_Driver; i++)
         {
-            int drID = rq.request.Driver[i];
+            int drID = rq.request.Driver[(i + offset) % rq.request.len_Driver];
             if (driver_volume[drID] + rq.request.RequestSize <= driver_capacity[drID])
             {
                 credits += rq.val * rq.request.RequestSize;
@@ -120,7 +121,7 @@ double FinalScheduler::copyToMatchDriver(std::vector<int> &fromMatchDriver, int 
     return credits;
 }
 
-void FinalScheduler::runSA(double &bestAns, int numLocked, int *driver_volume, int *driver_capacity) {
+void FinalScheduler::runSA(double &bestAns, int numLocked, int *driver_volume, int *driver_capacity, bool front) {
     std::vector<int> startMatchDriver(need_schedule.size(), -1);
 
     for (int i = 0; i < _driver_num; i++)
@@ -128,10 +129,10 @@ void FinalScheduler::runSA(double &bestAns, int numLocked, int *driver_volume, i
 
     for (int i = 0; i < numLocked; i++) {
         valRequest &rq = need_schedule[i];
-        int delta = rand() % rq.request.len_Driver;
+        int offset = rand() % rq.request.len_Driver;
         for (int j = 0; j < rq.request.len_Driver; j++)
         {
-            int drID = rq.request.Driver[(j + delta) % rq.request.len_Driver];
+            int drID = rq.request.Driver[(j + offset) % rq.request.len_Driver];
             if (driver_volume[drID] + rq.request.RequestSize <= driver_capacity[drID])
             {
                 driver_volume[drID] += rq.request.RequestSize;
@@ -150,8 +151,13 @@ void FinalScheduler::runSA(double &bestAns, int numLocked, int *driver_volume, i
 
     int n = need_schedule.size();
     int m = n - numLocked;
+    std::vector<int> randomList(m);
+    for (int i = 0; i < m; i++)
+        randomList[i] = front ? (i + numLocked) : i;
 
     for (int times = sa_times; times--; ) {
+
+        std::random_shuffle(randomList.begin(), randomList.end());
 
         middleMatchDriver = startMatchDriver;
         middleAns = copyToMatchDriver(middleMatchDriver, driver_volume, driver_capacity);
@@ -165,15 +171,13 @@ void FinalScheduler::runSA(double &bestAns, int numLocked, int *driver_volume, i
         {
             std::set<int> changelist;
             int k = m * temp;
-            k = std::min(k, 10);
+            k = std::min(k, 5);
             k = std::max(k, 1);
             double nowans = middleAns;
-            while (k--)
+            int offset = rand() % m;
+            for (int i = 0; i < k; i++)
             {
-                int pos = rand() % m + numLocked;
-
-                if (changelist.count(pos))
-                    continue;
+                int pos = randomList[(i + offset) % m];
 
                 nowans = change(pos, nowans, driver_volume, driver_capacity, changed, middleMatchDriver);
                 if (changed)
@@ -193,6 +197,24 @@ void FinalScheduler::runSA(double &bestAns, int numLocked, int *driver_volume, i
             }
             temp *= velo;
         }
+
+        for (int i = 0; i < n; i++)
+            if (middleMatchDriver[i] == -1) {
+                valRequest &rq = need_schedule[i];
+                int offset = rand() % rq.request.len_Driver;
+                for (int j = 0; j < rq.request.len_Driver; j++)
+                {
+                    int drID = rq.request.Driver[(j + offset) % rq.request.len_Driver];
+                    if (driver_volume[drID] + rq.request.RequestSize <= driver_capacity[drID])
+                    {
+                        driver_volume[drID] += rq.request.RequestSize;
+                        middleAns += rq.request.RequestSize * rq.val;
+                        middleMatchDriver[i] = drID;
+                        break;
+                    }
+                }
+            }
+
         if (middleAns > bestAns)
         {
             bestAns = middleAns;
@@ -203,8 +225,11 @@ void FinalScheduler::runSA(double &bestAns, int numLocked, int *driver_volume, i
 }
 
 void FinalScheduler::solveSA(double &bestAns, int *driver_volume, int *driver_capacity) {
-    const int times = 16;
+    const int times = 8;
 
     for (int i = 0; i <= times; i++)
-        runSA(bestAns, need_schedule.size() / times * i, driver_volume, driver_capacity);
+        runSA(bestAns, need_schedule.size() / times * i, driver_volume, driver_capacity, true);
+
+    for (int i = 0; i < times; i++)
+        runSA(bestAns, need_schedule.size() / times * i, driver_volume, driver_capacity, false);
 }
